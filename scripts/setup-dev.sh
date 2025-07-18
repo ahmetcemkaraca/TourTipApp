@@ -2,7 +2,7 @@
 
 # Development Environment Setup Script
 
-echo "Setting up TourTrip.app Development Environment..."
+echo "Setting up TourTrip.app Development Environment with Firebase..."
 
 # Check if Docker is installed
 if ! command -v docker &> /dev/null; then
@@ -16,25 +16,36 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
+# Check if Firebase CLI is installed
+if ! command -v firebase &> /dev/null; then
+    echo "Firebase CLI is not installed. Installing..."
+    npm install -g firebase-tools
+fi
+
 # Create necessary directories
-mkdir -p database/init
+mkdir -p firebase/functions
+mkdir -p firebase/public
 mkdir -p nginx
 mkdir -p logs
 
 # Copy environment configuration
 cp environments/development.properties .env
 
-# Start development services
-echo "Starting development services..."
+# Initialize Firebase project (if not already initialized)
+if [ ! -f "firebase/.firebaserc" ]; then
+    echo "Initializing Firebase project..."
+    cd firebase
+    firebase init --project tourtrip-dev
+    cd ..
+fi
+
+# Start Firebase emulators and other services
+echo "Starting Firebase emulators and development services..."
 docker-compose up -d
 
-# Wait for database to be ready
-echo "Waiting for database to be ready..."
-sleep 10
-
-# Run database migrations (placeholder)
-echo "Running database migrations..."
-# ./gradlew flywayMigrate -Penvironment=development
+# Wait for Firebase emulators to be ready
+echo "Waiting for Firebase emulators to be ready..."
+sleep 15
 
 # Build the project
 echo "Building the project..."
@@ -42,9 +53,14 @@ echo "Building the project..."
 
 echo "Development environment setup complete!"
 echo "Services running:"
-echo "- Database: localhost:5432"
+echo "- Firebase Emulator UI: http://localhost:4000"
+echo "- Firebase Auth: localhost:9099"
+echo "- Firebase Firestore: localhost:8085"
+echo "- Firebase Functions: localhost:8080"
+echo "- Firebase Storage: localhost:9199"
 echo "- Redis: localhost:6379"
-echo "- API Gateway: localhost:8080"
+echo "- API Gateway: localhost:3000"
 echo ""
 echo "To stop services: docker-compose down"
 echo "To view logs: docker-compose logs -f"
+echo "To access Firebase console: firebase open"

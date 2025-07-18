@@ -6,8 +6,7 @@ build/
 !**/src/test/**/build/
 
 #AI
-.kiro/
-
+.kiro
 # IntelliJ IDEA
 .idea/
 *.iws

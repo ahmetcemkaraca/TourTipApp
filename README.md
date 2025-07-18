@@ -4,13 +4,23 @@ A comprehensive mobile super application connecting tourists, locals, and activi
 
 ## 🏗️ Architecture
 
-This project uses **Kotlin Multiplatform Mobile (KMM)** for shared business logic between Android and iOS platforms, with platform-specific UI implementations.
+This project uses **Kotlin Multiplatform Mobile (KMM)** for shared business logic between Android and iOS platforms, with **Firebase** as the cloud backend infrastructure.
 
 ### Tech Stack
-- **Shared**: Kotlin Multiplatform, Ktor, SQLDelight, Kotlinx.serialization
-- **Android**: Jetpack Compose, Material Design 3, Coil
-- **iOS**: SwiftUI, Combine, Kingfisher
+- **Shared**: Kotlin Multiplatform, Ktor, Kotlinx.serialization
+- **Android**: Jetpack Compose, Material Design 3, Coil, Firebase SDK
+- **iOS**: SwiftUI, Combine, Kingfisher, Firebase SDK
+- **Backend**: Firebase (Auth, Firestore, Functions, Storage, Analytics)
 - **Build**: Gradle with Kotlin DSL
+
+### Firebase Services
+- **Authentication**: Firebase Auth for user management
+- **Database**: Cloud Firestore for real-time data
+- **Storage**: Firebase Storage for file uploads
+- **Functions**: Cloud Functions for server-side logic
+- **Analytics**: Firebase Analytics for user insights
+- **Messaging**: Firebase Cloud Messaging for push notifications
+- **Crashlytics**: Firebase Crashlytics for crash reporting
 
 ## 🚀 Quick Start
 
@@ -66,17 +76,23 @@ cd tourtrip.app
 ## 🏢 Environments
 
 ### Development
-- **Database**: localhost:5432
+- **Firebase Emulator UI**: http://localhost:4000
+- **Firebase Auth**: localhost:9099
+- **Firebase Firestore**: localhost:8085
+- **Firebase Functions**: localhost:8080
+- **Firebase Storage**: localhost:9199
 - **Redis**: localhost:6379
-- **API Gateway**: localhost:8080
+- **API Gateway**: localhost:3000
 - **Configuration**: `environments/development.properties`
 
 ### Staging
+- **Firebase Project**: tourtrip-staging
 - **Setup**: `./scripts/setup-staging.sh`
 - **Configuration**: `environments/staging.properties`
 - **Docker**: `docker-compose.staging.yml`
 
 ### Production
+- **Firebase Project**: tourtrip-prod
 - **Configuration**: `environments/production.properties`
 - **Deployment**: Automated via GitHub Actions
 
