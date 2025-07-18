@@ -2,7 +2,9 @@
 
 ## Core Infrastructure and Setup
 
-- [ ] 1. Set up project repository and structure
+- [x] 1. Set up project repository and structure
+
+
 
 
 

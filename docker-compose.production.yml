@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Production Database (External managed service recommended)
+  postgres-prod:
+    image: postgres:15-alpine
+    container_name: tourtrip-db-prod
+    environment:
+      POSTGRES_DB: tourtrip_production
+      POSTGRES_USER: ${PROD_DB_USER}
+      POSTGRES_PASSWORD: ${PROD_DB_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - tourtrip-prod-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # Redis for caching
+  redis-prod:
+    image: redis:7-alpine
+    container_name: tourtrip-redis-prod
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - tourtrip-prod-network
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Production API Gateway
+  api-gateway-prod:
+    image: nginx:alpine
+    container_name: tourtrip-gateway-prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/production.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - postgres-prod
+      - redis-prod
+    networks:
+      - tourtrip-prod-network
+    restart: unless-stopped
+
+  # Monitoring (Prometheus)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tourtrip-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - tourtrip-prod-network
+    restart: unless-stopped
+
+  # Monitoring (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tourtrip-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - tourtrip-prod-network
+    restart: unless-stopped
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  tourtrip-prod-network:
+    driver: bridge
