@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Staging Database
+  postgres-staging:
+    image: postgres:15-alpine
+    container_name: tourtrip-db-staging
+    environment:
+      POSTGRES_DB: tourtrip_staging
+      POSTGRES_USER: ${STAGING_DB_USER}
+      POSTGRES_PASSWORD: ${STAGING_DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    networks:
+      - tourtrip-staging-network
+
+  # Redis for caching
+  redis-staging:
+    image: redis:7-alpine
+    container_name: tourtrip-redis-staging
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_staging_data:/data
+    networks:
+      - tourtrip-staging-network
+
+  # Staging API Gateway
+  api-gateway-staging:
+    image: nginx:alpine
+    container_name: tourtrip-gateway-staging
+    ports:
+      - "8081:80"
+    volumes:
+      - ./nginx/staging.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - postgres-staging
+      - redis-staging
+    networks:
+      - tourtrip-staging-network
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:
+
+networks:
+  tourtrip-staging-network:
+    driver: bridge

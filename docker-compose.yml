@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Development Database
+  postgres-dev:
+    image: postgres:15-alpine
+    container_name: tourtrip-db-dev
+    environment:
+      POSTGRES_DB: tourtrip_dev
+      POSTGRES_USER: tourtrip
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - tourtrip-network
+
+  # Redis for caching
+  redis-dev:
+    image: redis:7-alpine
+    container_name: tourtrip-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - tourtrip-network
+
+  # Development API Gateway (placeholder)
+  api-gateway-dev:
+    image: nginx:alpine
+    container_name: tourtrip-gateway-dev
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - postgres-dev
+      - redis-dev
+    networks:
+      - tourtrip-network
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  tourtrip-network:
+    driver: bridge
