@@ -75,15 +75,13 @@ cd tourtrip.app
 
 ## 🏢 Environments
 
-### Development
-- **Firebase Emulator UI**: http://localhost:4000
-- **Firebase Auth**: localhost:9099
-- **Firebase Firestore**: localhost:8085
-- **Firebase Functions**: localhost:8080
-- **Firebase Storage**: localhost:9199
+### Live Development
+- **Firebase Project**: tourtrip-live-dev (LIVE Firebase services)
+- **Firebase Console**: https://console.firebase.google.com/project/tourtrip-live-dev
 - **Redis**: localhost:6379
-- **API Gateway**: localhost:3000
+- **Development Dashboard**: http://localhost:3000
 - **Configuration**: `environments/development.properties`
+- **⚠️ Important**: Uses real Firebase services with persistent data
 
 ### Staging
 - **Firebase Project**: tourtrip-staging

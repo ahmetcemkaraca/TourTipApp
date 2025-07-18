@@ -1,6 +1,6 @@
-# Development Environment Setup Script for Windows
+# Live Development Environment Setup Script for Windows
 
-Write-Host "Setting up TourTrip.app Development Environment with Firebase..." -ForegroundColor Green
+Write-Host "Setting up TourTrip.app Live Development Environment with Firebase..." -ForegroundColor Green
 
 # Check if Docker is installed
 try {
@@ -43,35 +43,49 @@ New-Item -ItemType Directory -Force -Path "logs"
 # Copy environment configuration
 Copy-Item "environments\development.properties" ".env"
 
-# Initialize Firebase project (if not already initialized)
+# Firebase authentication check
+Write-Host "Checking Firebase authentication..." -ForegroundColor Yellow
+try {
+    firebase projects:list | Out-Null
+} catch {
+    Write-Host "Please login to Firebase first:" -ForegroundColor Yellow
+    firebase login
+}
+
+# Initialize Firebase project for live development
 if (-not (Test-Path "firebase\.firebaserc")) {
-    Write-Host "Initializing Firebase project..." -ForegroundColor Yellow
+    Write-Host "Initializing Firebase project for live development..." -ForegroundColor Yellow
     Set-Location firebase
-    firebase init --project tourtrip-dev
+    firebase init --project tourtrip-live-dev
+    Set-Location ..
+} else {
+    Write-Host "Setting Firebase project to live development..." -ForegroundColor Yellow
+    Set-Location firebase
+    firebase use tourtrip-live-dev
     Set-Location ..
 }
 
-# Start Firebase emulators and development services
-Write-Host "Starting Firebase emulators and development services..." -ForegroundColor Yellow
+# Start development services (no emulators, using live Firebase)
+Write-Host "Starting live development services..." -ForegroundColor Yellow
 docker-compose up -d
 
-# Wait for Firebase emulators to be ready
-Write-Host "Waiting for Firebase emulators to be ready..." -ForegroundColor Yellow
-Start-Sleep -Seconds 15
+# Wait for services to be ready
+Write-Host "Waiting for services to be ready..." -ForegroundColor Yellow
+Start-Sleep -Seconds 10
 
 # Build the project
 Write-Host "Building the project..." -ForegroundColor Yellow
 .\gradlew.bat build
 
-Write-Host "Development environment setup complete!" -ForegroundColor Green
+Write-Host "Live development environment setup complete!" -ForegroundColor Green
 Write-Host "Services running:" -ForegroundColor Cyan
-Write-Host "- Firebase Emulator UI: http://localhost:4000" -ForegroundColor White
-Write-Host "- Firebase Auth: localhost:9099" -ForegroundColor White
-Write-Host "- Firebase Firestore: localhost:8085" -ForegroundColor White
-Write-Host "- Firebase Functions: localhost:8080" -ForegroundColor White
-Write-Host "- Firebase Storage: localhost:9199" -ForegroundColor White
+Write-Host "- Live Firebase Project: tourtrip-live-dev" -ForegroundColor White
+Write-Host "- Firebase Console: https://console.firebase.google.com/project/tourtrip-live-dev" -ForegroundColor White
 Write-Host "- Redis: localhost:6379" -ForegroundColor White
-Write-Host "- API Gateway: localhost:3000" -ForegroundColor White
+Write-Host "- Development Dashboard: http://localhost:3000" -ForegroundColor White
+Write-Host ""
+Write-Host "Important: You are now connected to LIVE Firebase services!" -ForegroundColor Red
+Write-Host "All data changes will be persistent and real." -ForegroundColor Red
 Write-Host ""
 Write-Host "To stop services: docker-compose down" -ForegroundColor Yellow
 Write-Host "To view logs: docker-compose logs -f" -ForegroundColor Yellow

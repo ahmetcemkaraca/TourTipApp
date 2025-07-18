@@ -1,33 +1,26 @@
 version: '3.8'
 
 services:
-  # Firebase Emulator Suite for local development
-  firebase-emulators:
+  # Firebase CLI Tools for live development
+  firebase-tools:
     image: node:18-alpine
-    container_name: tourtrip-firebase-emulators
+    container_name: tourtrip-firebase-tools
     working_dir: /app
-    ports:
-      - "4000:4000"   # Emulator Suite UI
-      - "9099:9099"   # Authentication
-      - "8080:8080"   # Cloud Functions
-      - "9000:9000"   # Realtime Database
-      - "8085:8085"   # Cloud Firestore
-      - "9199:9199"   # Cloud Storage
-      - "9299:9299"   # Cloud Pub/Sub
     volumes:
       - ./firebase:/app
-      - firebase_data:/app/.firebase
+      - firebase_cache:/app/.firebase
     command: >
       sh -c "
         npm install -g firebase-tools &&
-        firebase emulators:start --only auth,firestore,functions,storage,database,pubsub --host 0.0.0.0
+        echo 'Firebase CLI ready for live development' &&
+        tail -f /dev/null
       "
     environment:
-      - FIREBASE_PROJECT_ID=tourtrip-dev
+      - FIREBASE_PROJECT_ID=tourtrip-live-dev
     networks:
       - tourtrip-network
 
-  # Redis for additional caching (optional with Firebase)
+  # Redis for caching and session management
   redis-dev:
     image: redis:7-alpine
     container_name: tourtrip-redis-dev
@@ -35,24 +28,24 @@ services:
       - "6379:6379"
     volumes:
       - redis_dev_data:/data
+    command: redis-server --appendonly yes
     networks:
       - tourtrip-network
 
-  # Development proxy for Firebase Functions
-  nginx-dev:
+  # Development monitoring and logging
+  monitoring:
     image: nginx:alpine
-    container_name: tourtrip-nginx-dev
+    container_name: tourtrip-monitoring
     ports:
       - "3000:80"
     volumes:
-      - ./nginx/firebase-dev.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - firebase-emulators
+      - ./nginx/live-dev.conf:/etc/nginx/nginx.conf
+      - ./logs:/var/log/nginx
     networks:
       - tourtrip-network
 
 volumes:
-  firebase_data:
+  firebase_cache:
   redis_dev_data:
 
 networks:
