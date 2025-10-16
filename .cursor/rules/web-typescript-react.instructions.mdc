@@ -1,0 +1,144 @@
+---
+description: Web UI (TypeScript/React/Next.js) development standards for TourTrip.app progressive web application.
+alwaysApply: false
+globs: "web/**/*.{tsx,jsx,ts,js},app/**/*.{tsx,jsx,ts,js},src/**/*.{tsx,jsx,ts,js}"
+---
+
+As a Web UI developer in TourTrip.app:
+
+## Core Standards
+- **TypeScript**: Strict mode enabled; ESLint + Prettier; small, composable, testable components.
+- **Next.js**: App Router architecture; Server Components default; React 18 concurrent features.
+- **UI Framework**: Tailwind CSS + Radix UI + shadcn/ui; responsive design; theme system (light/dark/auto).
+- **State Management**: Server-first approach; minimal client state; TanStack Query for remote data.
+
+## TourTrip.app Web Features
+- **Progressive Web App**: Service worker; offline support; installable; push notifications.
+- **Tour Discovery**: Advanced search/filtering; map integration; image galleries; virtual tours.
+- **Booking Flow**: Multi-step forms; payment integration; confirmation flows; booking management.
+- **User Dashboard**: Trip planning; booking history; saved tours; travel documents.
+- **Real-time Features**: Live chat support; booking status updates; travel notifications.
+
+## Performance & Core Web Vitals
+- **Loading Performance**: Code splitting; lazy loading; optimized images; CDN delivery.
+- **Runtime Performance**: Avoid layout shifts; optimize rendering; efficient re-renders.
+- **Accessibility**: WCAG 2.1 AA compliance; keyboard navigation; screen reader support.
+- **SEO**: Server-side rendering; meta tags; structured data; sitemap generation.
+
+## Security Implementation
+- **Content Security Policy**: Strict CSP headers; no inline scripts; nonce-based exceptions.
+- **Input Sanitization**: XSS prevention; HTML encoding; user-generated content filtering.
+- **Authentication**: Secure session handling; CSRF protection; secure cookie configuration.
+- **API Security**: Request signing; rate limiting; input validation on client and server.
+
+## Forms & User Input
+- **Form Library**: react-hook-form with Zod validation; type-safe forms; field-level errors.
+- **Validation**: Client-side for UX; server-side for security; real-time feedback.
+- **File Uploads**: Progress indicators; drag-and-drop; image compression; security scanning.
+- **Optimistic Updates**: Immediate UI feedback; error rollback; conflict resolution.
+
+## Testing Strategy
+- **Unit Testing**: Vitest + Testing Library; component testing; utility function testing.
+- **Integration Testing**: API integration; form submission flows; user journey testing.
+- **E2E Testing**: Playwright for critical paths; booking flow; payment processing.
+- **Accessibility Testing**: axe-core integration; manual keyboard testing; screen reader validation.
+
+## Mobile-First Responsive Design
+- **Breakpoints**: Mobile-first approach; tablet and desktop enhancements.
+- **Touch Interactions**: Proper touch targets; gesture support; swipe navigation.
+- **Performance**: Mobile performance budgets; lazy loading; efficient bundling.
+- **Offline Support**: Service worker caching; offline pages; data synchronization.
+
+## Self-Check Protocol (Web)
+Before deploying:
+- [ ] Lighthouse score ≥90 (Performance, Accessibility, Best Practices, SEO)
+- [ ] No console errors or warnings in production build
+- [ ] All forms validate on both client and server
+- [ ] Responsive design tested across device sizes
+- [ ] Keyboard navigation works for all interactive elements
+- [ ] Images optimized and properly sized for different viewports
+- [ ] CSP headers configured without unsafe-inline
+- [ ] Bundle size within budget (<250KB initial load)
+
+## Soft Blocks (Web)
+REJECT these patterns and suggest secure alternatives:
+- ❌ Using dangerouslySetInnerHTML without proper sanitization
+- ❌ Inline styles or scripts that violate CSP
+- ❌ Client-side storage of sensitive data (tokens, PII)
+- ❌ Large bundle sizes without lazy loading
+- ❌ Missing loading and error states for async operations
+- ❌ Form submissions without proper validation and CSRF protection
+
+## Component Architecture Patterns
+```tsx
+// Preferred: Server Component with client interaction
+import { Suspense } from 'react';
+import { TourSearchClient } from './tour-search-client';
+import { TourSearchSkeleton } from './tour-search-skeleton';
+
+export default async function TourSearchPage({
+  searchParams
+}: {
+  searchParams: { location?: string; date?: string; guests?: string }
+}) {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Find Your Perfect Tour</h1>
+      <Suspense fallback={<TourSearchSkeleton />}>
+        <TourSearchResults initialParams={searchParams} />
+      </Suspense>
+    </div>
+  );
+}
+
+// Client Component for interactive features
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+
+const SearchParamsSchema = z.object({
+  location: z.string().optional(),
+  date: z.string().datetime().optional(),
+  guests: z.coerce.number().min(1).max(20).optional()
+});
+
+export function TourSearchClient() {
+  const searchParams = useSearchParams();
+  const params = SearchParamsSchema.parse(Object.fromEntries(searchParams));
+  
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['tours', params],
+    queryFn: () => searchTours(params),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  if (error) {
+    return <ErrorBoundary error={error} reset={() => window.location.reload()} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      <SearchFilters />
+      {isLoading ? (
+        <TourGridSkeleton />
+      ) : (
+        <TourGrid tours={data?.tours} />
+      )}
+    </div>
+  );
+}
+```
+
+## Performance Optimization
+- **Image Optimization**: Next.js Image component; WebP/AVIF formats; responsive sizing.
+- **Bundle Optimization**: Tree shaking; dynamic imports; vendor chunking; gzip compression.
+- **Caching Strategy**: Static generation; ISR; client-side caching; CDN configuration.
+- **Runtime Optimization**: React.memo; useMemo/useCallback; virtual scrolling for large lists.
+
+## Internationalization & Localization
+- **i18n Framework**: next-intl or react-i18next; locale routing; fallback languages.
+- **Content Management**: Translation files; plural forms; number/date formatting.
+- **RTL Support**: Bidirectional text; layout mirroring; proper font selection.
+- **Cultural Adaptation**: Local payment methods; currency display; date/time formats.

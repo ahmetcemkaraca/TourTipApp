@@ -1,0 +1,579 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =================================
+    // HELPER FUNCTIONS
+    // =================================
+    
+    // Authentication helpers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserId() {
+      return request.auth.uid;
+    }
+    
+    function getUserEmail() {
+      return request.auth.token.email;
+    }
+    
+    // User role helpers
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(getUserId())).data.role;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && getUserRole() == 'admin';
+    }
+    
+    function isManager() {
+      return isAuthenticated() && getUserRole() == 'manager';
+    }
+    
+    function isTourOperator() {
+      return isAuthenticated() && getUserRole() == 'tour_operator';
+    }
+    
+    function isCustomer() {
+      return isAuthenticated() && getUserRole() == 'customer';
+    }
+    
+    function hasRole(role) {
+      return isAuthenticated() && getUserRole() == role;
+    }
+    
+    function hasAnyRole(roles) {
+      return isAuthenticated() && getUserRole() in roles;
+    }
+    
+    // User status helpers
+    function isActiveUser() {
+      return get(/databases/$(database)/documents/users/$(getUserId())).data.isActive == true;
+    }
+    
+    function isVerifiedUser() {
+      return request.auth.token.email_verified == true;
+    }
+    
+    // Resource ownership helpers
+    function isResourceOwner(userId) {
+      return isAuthenticated() && getUserId() == userId;
+    }
+    
+    function isTourOwner(tourId) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/tours/$(tourId)).data.ownerId == getUserId();
+    }
+    
+    // Data validation helpers
+    function isValidEmail(email) {
+      return email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$');
+    }
+    
+    function isValidPhone(phone) {
+      return phone.matches('^\\+[1-9]\\d{1,14}$');
+    }
+    
+    function isValidUserRole(role) {
+      return role in ['admin', 'manager', 'tour_operator', 'customer', 'support'];
+    }
+    
+    function isValidTourCategory(category) {
+      return category in ['cultural', 'adventure', 'nature', 'food', 'historical', 'religious'];
+    }
+    
+    function isValidBookingStatus(status) {
+      return status in ['pending', 'confirmed', 'cancelled', 'completed', 'refunded'];
+    }
+    
+    function isValidPaymentStatus(status) {
+      return status in ['pending', 'paid', 'failed', 'refunded', 'partial'];
+    }
+    
+    // Time-based helpers
+    function isRecentlyCreated(timestamp, maxAgeMinutes) {
+      return timestamp > request.time - duration.value(maxAgeMinutes, 'm');
+    }
+    
+    function isFutureDate(date) {
+      return date > request.time;
+    }
+    
+    // Rate limiting helpers
+    function rateLimitRead(collection, maxReads) {
+      // This would need implementation with external rate limiting service
+      return true; // Simplified for this example
+    }
+    
+    function rateLimitWrite(collection, maxWrites) {
+      // This would need implementation with external rate limiting service
+      return true; // Simplified for this example
+    }
+    
+    // =================================
+    // USERS COLLECTION
+    // =================================
+    
+    match /users/{userId} {
+      // Read access
+      allow read: if isAuthenticated() && (
+        // Users can read their own profile
+        isResourceOwner(userId) ||
+        // Admins and managers can read all profiles
+        isAdmin() || isManager() ||
+        // Tour operators can read customer profiles for their bookings
+        (isTourOperator() && hasValidBookingWithUser(userId)) ||
+        // Support can read profiles for ticket resolution
+        (hasRole('support') && hasOpenSupportTicketFromUser(userId))
+      );
+      
+      // Create access
+      allow create: if isAuthenticated() && 
+        isResourceOwner(userId) &&
+        isValidUserData(resource.data) &&
+        resource.data.role == 'customer' && // New users start as customers
+        resource.data.isActive == true &&
+        resource.data.createdAt == request.time;
+      
+      // Update access
+      allow update: if isAuthenticated() && (
+        // Users can update their own profile (limited fields)
+        (isResourceOwner(userId) && isValidUserSelfUpdate(resource.data)) ||
+        // Admins can update any user
+        (isAdmin() && isValidUserAdminUpdate(resource.data)) ||
+        // Managers can update non-admin users
+        (isManager() && resource.data.role != 'admin' && isValidUserManagerUpdate(resource.data))
+      ) && resource.data.updatedAt == request.time;
+      
+      // Delete access (soft delete only)
+      allow delete: if isAdmin() && userId != getUserId(); // Admins can't delete themselves
+    }
+    
+    function isValidUserData(data) {
+      return data.keys().hasAll(['id', 'email', 'role', 'isActive', 'createdAt']) &&
+             data.id == getUserId() &&
+             isValidEmail(data.email) &&
+             isValidUserRole(data.role) &&
+             data.isActive is bool &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidUserSelfUpdate(data) {
+      let allowedFields = ['displayName', 'profile', 'preferences', 'lastLoginAt', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields) &&
+             (!data.keys().hasAny(['role', 'isActive', 'email'])); // Can't change critical fields
+    }
+    
+    function isValidUserAdminUpdate(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.updatedAt is timestamp;
+    }
+    
+    function isValidUserManagerUpdate(data) {
+      let allowedFields = ['displayName', 'isActive', 'profile', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+    
+    function hasValidBookingWithUser(userId) {
+      // This would check if the tour operator has bookings from this user
+      // Implementation would require a more complex query
+      return true; // Simplified for this example
+    }
+    
+    function hasOpenSupportTicketFromUser(userId) {
+      // This would check if there are open support tickets from this user
+      // Implementation would require a more complex query
+      return true; // Simplified for this example
+    }
+    
+    // =================================
+    // TOURS COLLECTION
+    // =================================
+    
+    match /tours/{tourId} {
+      // Read access
+      allow read: if resource.data.isActive == true || // Public tours
+                     isAdmin() || isManager() || // Admin access
+                     isTourOwner(tourId); // Owner access
+      
+      // Create access
+      allow create: if isAuthenticated() && 
+        isActiveUser() &&
+        (isTourOperator() || isAdmin()) &&
+        isValidTourData(resource.data) &&
+        resource.data.ownerId == getUserId() &&
+        resource.data.createdAt == request.time;
+      
+      // Update access
+      allow update: if isAuthenticated() && (
+        // Tour operators can update their own tours
+        (isTourOperator() && isTourOwner(tourId) && isValidTourUpdate(resource.data)) ||
+        // Admins can update any tour
+        (isAdmin() && isValidTourAdminUpdate(resource.data))
+      ) && resource.data.updatedAt == request.time;
+      
+      // Delete access
+      allow delete: if isAdmin() || 
+                       (isTourOperator() && isTourOwner(tourId));
+    }
+    
+    function isValidTourData(data) {
+      return data.keys().hasAll(['title', 'description', 'category', 'price', 'location', 'ownerId', 'isActive', 'createdAt']) &&
+             data.title is string &&
+             data.title.size() >= 3 && data.title.size() <= 200 &&
+             data.description is string &&
+             data.description.size() >= 10 && data.description.size() <= 2000 &&
+             isValidTourCategory(data.category) &&
+             isValidPriceData(data.price) &&
+             isValidLocationData(data.location) &&
+             data.ownerId is string &&
+             data.isActive is bool &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidTourUpdate(data) {
+      let allowedFields = ['title', 'description', 'price', 'location', 'images', 'maxParticipants', 'duration', 'tags', 'isActive', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields) &&
+             (!data.keys().hasAny(['ownerId', 'category', 'createdAt'])); // Can't change these fields
+    }
+    
+    function isValidTourAdminUpdate(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.updatedAt is timestamp;
+    }
+    
+    function isValidPriceData(price) {
+      return price.keys().hasAll(['amount', 'currency']) &&
+             price.amount is number &&
+             price.amount > 0 &&
+             price.currency in ['TRY', 'USD', 'EUR'] &&
+             price.amount <= 100000; // Max price limit
+    }
+    
+    function isValidLocationData(location) {
+      return location.keys().hasAll(['name', 'coordinates']) &&
+             location.name is string &&
+             location.name.size() >= 2 &&
+             location.coordinates.keys().hasAll(['latitude', 'longitude']) &&
+             location.coordinates.latitude is number &&
+             location.coordinates.longitude is number &&
+             location.coordinates.latitude >= -90 && location.coordinates.latitude <= 90 &&
+             location.coordinates.longitude >= -180 && location.coordinates.longitude <= 180;
+    }
+    
+    // =================================
+    // BOOKINGS COLLECTION
+    // =================================
+    
+    match /bookings/{bookingId} {
+      // Read access
+      allow read: if isAuthenticated() && (
+        // Users can read their own bookings
+        isResourceOwner(resource.data.userId) ||
+        // Tour operators can read bookings for their tours
+        (isTourOperator() && isTourOwner(resource.data.tourId)) ||
+        // Admins and managers can read all bookings
+        isAdmin() || isManager() ||
+        // Support can read bookings for ticket resolution
+        hasRole('support')
+      );
+      
+      // Create access
+      allow create: if isAuthenticated() &&
+        isActiveUser() &&
+        isResourceOwner(resource.data.userId) &&
+        isValidBookingData(resource.data) &&
+        isFutureDate(resource.data.bookingDate) &&
+        resource.data.createdAt == request.time;
+      
+      // Update access
+      allow update: if isAuthenticated() && (
+        // Users can update limited fields on their own bookings
+        (isResourceOwner(resource.data.userId) && isValidBookingUserUpdate(resource.data)) ||
+        // Tour operators can update status of bookings for their tours
+        (isTourOperator() && isTourOwner(resource.data.tourId) && isValidBookingOperatorUpdate(resource.data)) ||
+        // Admins can update any booking
+        (isAdmin() && isValidBookingAdminUpdate(resource.data))
+      ) && resource.data.updatedAt == request.time;
+      
+      // Delete access (only admins can delete bookings)
+      allow delete: if isAdmin();
+    }
+    
+    function isValidBookingData(data) {
+      return data.keys().hasAll(['userId', 'tourId', 'status', 'bookingDate', 'participants', 'totalAmount', 'paymentStatus', 'createdAt']) &&
+             data.userId is string &&
+             data.tourId is string &&
+             isValidBookingStatus(data.status) &&
+             data.bookingDate is timestamp &&
+             data.participants is list &&
+             data.participants.size() >= 1 && data.participants.size() <= 10 &&
+             isValidPriceData(data.totalAmount) &&
+             isValidPaymentStatus(data.paymentStatus) &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidBookingUserUpdate(data) {
+      let allowedFields = ['participants', 'specialRequests', 'contactInfo', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields) &&
+             data.status == resource.data.status && // Can't change status
+             data.paymentStatus == resource.data.paymentStatus; // Can't change payment status
+    }
+    
+    function isValidBookingOperatorUpdate(data) {
+      let allowedFields = ['status', 'operatorNotes', 'confirmationDetails', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields) &&
+             (data.status in ['confirmed', 'cancelled']) &&
+             data.paymentStatus == resource.data.paymentStatus; // Can't change payment status
+    }
+    
+    function isValidBookingAdminUpdate(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.updatedAt is timestamp;
+    }
+    
+    // =================================
+    // REVIEWS COLLECTION
+    // =================================
+    
+    match /reviews/{reviewId} {
+      // Read access (reviews are mostly public)
+      allow read: if resource.data.isPublished == true ||
+                     isResourceOwner(resource.data.userId) ||
+                     isAdmin() || isManager();
+      
+      // Create access
+      allow create: if isAuthenticated() &&
+        isActiveUser() &&
+        isResourceOwner(resource.data.userId) &&
+        isValidReviewData(resource.data) &&
+        hasValidCompletedBooking(resource.data.tourId, resource.data.userId) &&
+        resource.data.createdAt == request.time;
+      
+      // Update access
+      allow update: if isAuthenticated() && (
+        // Users can update their own reviews (limited fields)
+        (isResourceOwner(resource.data.userId) && isValidReviewUserUpdate(resource.data)) ||
+        // Admins can moderate reviews
+        (isAdmin() && isValidReviewAdminUpdate(resource.data))
+      ) && resource.data.updatedAt == request.time;
+      
+      // Delete access
+      allow delete: if isAdmin() || 
+                       (isResourceOwner(resource.data.userId) && isRecentlyCreated(resource.data.createdAt, 60));
+    }
+    
+    function isValidReviewData(data) {
+      return data.keys().hasAll(['userId', 'tourId', 'rating', 'comment', 'isPublished', 'isVerified', 'createdAt']) &&
+             data.userId is string &&
+             data.tourId is string &&
+             data.rating is int &&
+             data.rating >= 1 && data.rating <= 5 &&
+             data.comment is string &&
+             data.comment.size() >= 10 && data.comment.size() <= 1000 &&
+             data.isPublished is bool &&
+             data.isVerified is bool &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidReviewUserUpdate(data) {
+      let allowedFields = ['rating', 'comment', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields) &&
+             (!data.keys().hasAny(['isVerified', 'isPublished'])); // Can't change these fields
+    }
+    
+    function isValidReviewAdminUpdate(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.updatedAt is timestamp;
+    }
+    
+    function hasValidCompletedBooking(tourId, userId) {
+      // This would check if the user has a completed booking for this tour
+      // Implementation would require a more complex query or external validation
+      return true; // Simplified for this example
+    }
+    
+    // =================================
+    // PAYMENTS COLLECTION
+    // =================================
+    
+    match /payments/{paymentId} {
+      // Read access (very restricted)
+      allow read: if isAuthenticated() && (
+        // Users can read their own payment records
+        isResourceOwner(resource.data.userId) ||
+        // Admins can read all payments
+        isAdmin() ||
+        // Managers can read payments for reporting
+        isManager()
+      );
+      
+      // Create access (only via server-side functions)
+      allow create: if false; // Payments should only be created via Cloud Functions
+      
+      // Update access (only via server-side functions for status changes)
+      allow update: if false; // Payments should only be updated via Cloud Functions
+      
+      // Delete access (never allow deletion)
+      allow delete: if false;
+    }
+    
+    // =================================
+    // SUPPORT TICKETS COLLECTION
+    // =================================
+    
+    match /support_tickets/{ticketId} {
+      // Read access
+      allow read: if isAuthenticated() && (
+        // Users can read their own tickets
+        isResourceOwner(resource.data.userId) ||
+        // Support staff can read all tickets
+        hasRole('support') ||
+        // Admins can read all tickets
+        isAdmin()
+      );
+      
+      // Create access
+      allow create: if isAuthenticated() &&
+        isActiveUser() &&
+        isResourceOwner(resource.data.userId) &&
+        isValidSupportTicketData(resource.data) &&
+        resource.data.createdAt == request.time;
+      
+      // Update access
+      allow update: if isAuthenticated() && (
+        // Users can add messages to their own tickets
+        (isResourceOwner(resource.data.userId) && isValidTicketUserUpdate(resource.data)) ||
+        // Support staff can update tickets
+        (hasRole('support') && isValidTicketSupportUpdate(resource.data)) ||
+        // Admins can update any ticket
+        (isAdmin() && isValidTicketAdminUpdate(resource.data))
+      ) && resource.data.updatedAt == request.time;
+      
+      // Delete access
+      allow delete: if isAdmin();
+    }
+    
+    function isValidSupportTicketData(data) {
+      return data.keys().hasAll(['userId', 'subject', 'description', 'priority', 'status', 'category', 'createdAt']) &&
+             data.userId is string &&
+             data.subject is string &&
+             data.subject.size() >= 5 && data.subject.size() <= 200 &&
+             data.description is string &&
+             data.description.size() >= 10 && data.description.size() <= 2000 &&
+             data.priority in ['low', 'medium', 'high', 'urgent'] &&
+             data.status in ['open', 'in_progress', 'resolved', 'closed'] &&
+             data.category in ['booking', 'payment', 'tour', 'account', 'technical', 'other'] &&
+             data.createdAt is timestamp;
+    }
+    
+    function isValidTicketUserUpdate(data) {
+      let allowedFields = ['description', 'messages', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+    
+    function isValidTicketSupportUpdate(data) {
+      let allowedFields = ['status', 'priority', 'assignedTo', 'messages', 'resolution', 'updatedAt'];
+      return data.diff(resource.data).affectedKeys().hasOnly(allowedFields);
+    }
+    
+    function isValidTicketAdminUpdate(data) {
+      return data.keys().hasAll(['updatedAt']) &&
+             data.updatedAt is timestamp;
+    }
+    
+    // =================================
+    // ANALYTICS AND LOGS
+    // =================================
+    
+    match /analytics_events/{eventId} {
+      // Read access (very restricted)
+      allow read: if isAdmin() || hasRole('analytics');
+      
+      // Create access (events should be created via functions)
+      allow create: if false;
+      
+      // Update/Delete access
+      allow update, delete: if false;
+    }
+    
+    match /admin_logs/{logId} {
+      // Read access (very restricted)
+      allow read: if isAdmin();
+      
+      // Create access (logs should be created via functions)
+      allow create: if false;
+      
+      // Update/Delete access
+      allow update, delete: if false;
+    }
+    
+    match /audit_logs/{logId} {
+      // Read access (very restricted)
+      allow read: if isAdmin() || hasRole('security');
+      
+      // Create access (logs should be created via functions)
+      allow create: if false;
+      
+      // Update/Delete access
+      allow update, delete: if false;
+    }
+    
+    // =================================
+    // SYSTEM COLLECTIONS
+    // =================================
+    
+    match /system_config/{configId} {
+      // Read access
+      allow read: if isAdmin() || isManager();
+      
+      // Create/Update access
+      allow create, update: if isAdmin() &&
+        isValidSystemConfigData(resource.data) &&
+        resource.data.updatedAt == request.time;
+      
+      // Delete access
+      allow delete: if isAdmin();
+    }
+    
+    function isValidSystemConfigData(data) {
+      return data.keys().hasAll(['key', 'value', 'description', 'updatedBy', 'updatedAt']) &&
+             data.key is string &&
+             data.value != null &&
+             data.description is string &&
+             data.updatedBy is string &&
+             data.updatedAt is timestamp;
+    }
+    
+    match /notifications/{notificationId} {
+      // Read access
+      allow read: if isAuthenticated() &&
+        isResourceOwner(resource.data.userId);
+      
+      // Create access (notifications should be created via functions)
+      allow create: if false;
+      
+      // Update access (only to mark as read)
+      allow update: if isAuthenticated() &&
+        isResourceOwner(resource.data.userId) &&
+        data.diff(resource.data).affectedKeys().hasOnly(['isRead', 'readAt']) &&
+        resource.data.readAt == request.time;
+      
+      // Delete access
+      allow delete: if isAdmin() || 
+                       (isResourceOwner(resource.data.userId) && resource.data.isRead == true);
+    }
+    
+    // =================================
+    // DEFAULT DENY
+    // =================================
+    
+    // Deny access to any other collections not explicitly defined
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

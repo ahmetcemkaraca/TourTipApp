@@ -1,0 +1,245 @@
+# Firebase Extensions Configuration for TourTrip.app
+# This file defines the Firebase Extensions to be installed and configured
+
+extensions:
+  # Stripe Payments Extension
+  - name: firestore-stripe-payments
+    ref: firestore-stripe-payments@0.3.7
+    config:
+      PRODUCTS_COLLECTION: products
+      CUSTOMERS_COLLECTION: customers
+      CHECKOUT_SESSION_COLLECTION: checkout_sessions
+      PRICE_COLLECTION: prices
+      SYNC_USERS_ON_CREATE: true
+      DELETE_STRIPE_CUSTOMERS: false
+      STRIPE_WEBHOOK_SECRET: ${param:STRIPE_WEBHOOK_SECRET}
+    params:
+      STRIPE_API_KEY: ${param:STRIPE_API_KEY}
+      STRIPE_WEBHOOK_SECRET: ${param:STRIPE_WEBHOOK_SECRET}
+    description: "Stripe payments integration for tour bookings and subscriptions"
+
+  # SendGrid Email Extension
+  - name: firestore-send-email
+    ref: firestore-send-email@0.1.33
+    config:
+      MAIL_COLLECTION: mail
+      SENDGRID_API_KEY: ${param:SENDGRID_API_KEY}
+      DEFAULT_FROM: noreply@tourtrip.app
+      DEFAULT_REPLY_TO: support@tourtrip.app
+      USERS_COLLECTION: users
+      TEMPLATES_COLLECTION: emailTemplates
+    params:
+      SENDGRID_API_KEY: ${param:SENDGRID_API_KEY}
+    description: "SendGrid email service for transactional and marketing emails"
+
+  # Image Resizing Extension
+  - name: storage-resize-images
+    ref: storage-resize-images@0.1.37
+    config:
+      IMG_BUCKET: ${param:FIREBASE_STORAGE_BUCKET}
+      IMG_SIZES: "200x200,400x400,800x800,1200x1200"
+      RESIZED_IMAGES_PATH: resized
+      DELETE_ORIGINAL_FILE: false
+      CACHE_CONTROL_HEADER: max-age=31536000
+      IMG_TYPES: "jpeg,jpg,png,webp"
+      CONVERT_TO: webp
+    params:
+      FIREBASE_STORAGE_BUCKET: ${param:FIREBASE_STORAGE_BUCKET}
+    description: "Automatic image resizing and WebP conversion for tour photos"
+
+  # Search with Algolia Extension
+  - name: firestore-algolia-search
+    ref: firestore-algolia-search@0.5.14
+    config:
+      ALGOLIA_APP_ID: ${param:ALGOLIA_APP_ID}
+      ALGOLIA_API_KEY: ${param:ALGOLIA_API_KEY}
+      COLLECTION_PATH: tours
+      FIELDS: title,description,location,tags,category,price
+      INDEX_NAME: tours_index
+      TRANSFORM_FUNCTION: algoliaTransform
+    params:
+      ALGOLIA_APP_ID: ${param:ALGOLIA_APP_ID}
+      ALGOLIA_API_KEY: ${param:ALGOLIA_API_KEY}
+    description: "Algolia search integration for tour discovery"
+
+  # Trigger Email Extension
+  - name: firestore-email-users
+    ref: firestore-email-users@0.1.4
+    config:
+      USERS_COLLECTION: users
+      EMAIL_COLLECTION: emails
+      SENDGRID_API_KEY: ${param:SENDGRID_API_KEY}
+      EMAIL_SUBJECT: Welcome to TourTrip.app
+      EMAIL_BODY: Thank you for joining TourTrip.app!
+      SUCCESS_COLLECTION: emailSuccess
+      ERROR_COLLECTION: emailErrors
+    params:
+      SENDGRID_API_KEY: ${param:SENDGRID_API_KEY}
+    description: "Automated user email triggers for onboarding and notifications"
+
+  # Translate Text Extension
+  - name: firestore-translate-text
+    ref: firestore-translate-text@0.1.20
+    config:
+      COLLECTION_PATH: tours
+      INPUT_FIELD_NAME: description
+      OUTPUT_FIELD_NAME: descriptions
+      LANGUAGES: en,tr,de,fr,es,it
+      GOOGLE_CLOUD_PROJECT_ID: ${param:GOOGLE_CLOUD_PROJECT_ID}
+    params:
+      GOOGLE_CLOUD_PROJECT_ID: ${param:GOOGLE_CLOUD_PROJECT_ID}
+    description: "Automatic translation of tour descriptions for international users"
+
+  # Backup Firestore Extension
+  - name: firestore-bigquery-export
+    ref: firestore-bigquery-export@0.1.53
+    config:
+      COLLECTION_PATH: "{default}"
+      DATASET_ID: firestore_export
+      TABLE_ID: {collectionId}_raw_changelog
+      DATASET_LOCATION: EU
+      BACKUP_COLLECTION: backups
+      TRANSFORM_FUNCTION: bigqueryTransform
+    params:
+      GOOGLE_CLOUD_PROJECT_ID: ${param:GOOGLE_CLOUD_PROJECT_ID}
+    description: "Export Firestore data to BigQuery for analytics and backup"
+
+  # Short Links Extension
+  - name: firestore-shorten-urls-bitly
+    ref: firestore-shorten-urls-bitly@0.1.15
+    config:
+      COLLECTION_PATH: shortenedUrls
+      URL_FIELD_NAME: url
+      SHORT_URL_FIELD_NAME: shortUrl
+      BITLY_ACCESS_TOKEN: ${param:BITLY_ACCESS_TOKEN}
+    params:
+      BITLY_ACCESS_TOKEN: ${param:BITLY_ACCESS_TOKEN}
+    description: "Generate short URLs for tour sharing and marketing campaigns"
+
+  # Twilio SMS Extension
+  - name: firestore-send-sms
+    ref: firestore-send-sms@0.1.4
+    config:
+      COLLECTION_PATH: sms
+      TWILIO_ACCOUNT_SID: ${param:TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${param:TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${param:TWILIO_PHONE_NUMBER}
+      DELIVERY_RECEIPT_COLLECTION: smsDelivery
+    params:
+      TWILIO_ACCOUNT_SID: ${param:TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${param:TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${param:TWILIO_PHONE_NUMBER}
+    description: "SMS notifications for booking confirmations and reminders"
+
+  # Audit Logs Extension
+  - name: firestore-firestore-audit
+    ref: firestore-firestore-audit@0.1.2
+    config:
+      AUDIT_COLLECTION: auditLogs
+      WATCHED_COLLECTIONS: users,bookings,payments,tours
+      INCLUDE_METADATA: true
+      CAPTURE_READ_OPERATIONS: false
+      CAPTURE_WRITE_OPERATIONS: true
+    description: "Comprehensive audit logging for compliance and security"
+
+# Environment-specific parameter mappings
+environments:
+  development:
+    params:
+      STRIPE_API_KEY: sk_test_...
+      STRIPE_WEBHOOK_SECRET: whsec_test_...
+      SENDGRID_API_KEY: SG.test...
+      ALGOLIA_APP_ID: test_app_id
+      ALGOLIA_API_KEY: test_api_key
+      GOOGLE_CLOUD_PROJECT_ID: tourtrip-dev
+      FIREBASE_STORAGE_BUCKET: tourtrip-dev.appspot.com
+      BITLY_ACCESS_TOKEN: test_token
+      TWILIO_ACCOUNT_SID: test_sid
+      TWILIO_AUTH_TOKEN: test_token
+      TWILIO_PHONE_NUMBER: "+1234567890"
+
+  staging:
+    params:
+      STRIPE_API_KEY: sk_test_...
+      STRIPE_WEBHOOK_SECRET: whsec_test_...
+      SENDGRID_API_KEY: SG.staging...
+      ALGOLIA_APP_ID: staging_app_id
+      ALGOLIA_API_KEY: staging_api_key
+      GOOGLE_CLOUD_PROJECT_ID: tourtrip-staging
+      FIREBASE_STORAGE_BUCKET: tourtrip-staging.appspot.com
+      BITLY_ACCESS_TOKEN: staging_token
+      TWILIO_ACCOUNT_SID: staging_sid
+      TWILIO_AUTH_TOKEN: staging_token
+      TWILIO_PHONE_NUMBER: "+1234567891"
+
+  production:
+    params:
+      STRIPE_API_KEY: ${secret:STRIPE_API_KEY_PROD}
+      STRIPE_WEBHOOK_SECRET: ${secret:STRIPE_WEBHOOK_SECRET_PROD}
+      SENDGRID_API_KEY: ${secret:SENDGRID_API_KEY_PROD}
+      ALGOLIA_APP_ID: ${secret:ALGOLIA_APP_ID_PROD}
+      ALGOLIA_API_KEY: ${secret:ALGOLIA_API_KEY_PROD}
+      GOOGLE_CLOUD_PROJECT_ID: tourtrip-prod
+      FIREBASE_STORAGE_BUCKET: tourtrip-prod.appspot.com
+      BITLY_ACCESS_TOKEN: ${secret:BITLY_ACCESS_TOKEN_PROD}
+      TWILIO_ACCOUNT_SID: ${secret:TWILIO_ACCOUNT_SID_PROD}
+      TWILIO_AUTH_TOKEN: ${secret:TWILIO_AUTH_TOKEN_PROD}
+      TWILIO_PHONE_NUMBER: ${secret:TWILIO_PHONE_NUMBER_PROD}
+
+# Extension deployment configuration
+deployment:
+  install_order:
+    - firestore-stripe-payments
+    - storage-resize-images
+    - firestore-send-email
+    - firestore-algolia-search
+    - firestore-translate-text
+    - firestore-bigquery-export
+    - firestore-email-users
+    - firestore-shorten-urls-bitly
+    - firestore-send-sms
+    - firestore-firestore-audit
+
+  retry_policy:
+    max_attempts: 3
+    backoff_multiplier: 2
+    max_backoff: 300s
+
+  monitoring:
+    enabled: true
+    alert_on_failure: true
+    success_notification: false
+
+# Custom extension configurations
+custom_extensions:
+  # Custom Analytics Extension
+  - name: tourtrip-analytics
+    source: ./extensions/analytics
+    config:
+      ANALYTICS_COLLECTION: analytics
+      BIGQUERY_DATASET: tourtrip_analytics
+      EXPORT_INTERVAL: 300000  # 5 minutes
+      RETENTION_DAYS: 365
+    description: "Custom analytics extension for TourTrip-specific metrics"
+
+  # Custom Booking Workflow Extension
+  - name: tourtrip-booking-workflow
+    source: ./extensions/booking-workflow
+    config:
+      BOOKINGS_COLLECTION: bookings
+      TOURS_COLLECTION: tours
+      NOTIFICATIONS_COLLECTION: notifications
+      PAYMENT_COLLECTION: payments
+      INVENTORY_COLLECTION: inventory
+    description: "Custom booking workflow automation for tour reservations"
+
+  # Custom AI Recommendations Extension
+  - name: tourtrip-ai-recommendations
+    source: ./extensions/ai-recommendations
+    config:
+      USERS_COLLECTION: users
+      TOURS_COLLECTION: tours
+      RECOMMENDATIONS_COLLECTION: recommendations
+      ML_MODEL_PATH: gs://tourtrip-ml-models/recommendation-model
+      UPDATE_INTERVAL: 3600000  # 1 hour
+    description: "AI-powered tour recommendations based on user behavior"

@@ -1,0 +1,282 @@
+---
+description: TourTrip.app domain-specific business rules, patterns, and implementation guidelines for travel industry requirements.
+alwaysApply: true
+globs: "**/*tour*,**/*booking*,**/*payment*,**/*map*,**/*location*,**/*travel*"
+---
+
+# TourTrip.app Domain-Specific Rules
+
+## Core Business Domain
+
+### Travel Industry Context
+- **Target Market**: B2C travel platform for tour discovery, booking, and management.
+- **Geographic Focus**: Global platform with initial focus on Turkish destinations.
+- **User Personas**: Leisure travelers, adventure seekers, cultural enthusiasts, group organizers.
+- **Business Model**: Commission-based booking platform; potential subscription tiers for premium features.
+
+### Domain Entities & Relationships
+```mermaid
+erDiagram
+    User ||--o{ Booking : creates
+    User ||--o{ Review : writes
+    User ||--o{ Wishlist : maintains
+    Tour ||--o{ Booking : receives
+    Tour ||--o{ Review : has
+    Tour ||--|| TourOperator : "operated by"
+    Tour ||--o{ TourDate : "available on"
+    Booking ||--|| Payment : "paid via"
+    Booking ||--o{ Participant : includes
+    Location ||--o{ Tour : hosts
+    Location ||--o{ POI : contains
+```
+
+## Critical Business Rules
+
+### Tour Management
+- **Availability Engine**: Real-time inventory tracking; overbooking prevention; dynamic pricing.
+- **Seasonality**: Peak/off-season pricing; weather-dependent availability; cultural event considerations.
+- **Capacity Management**: Group size limits; guide ratios; vehicle capacity; venue restrictions.
+- **Content Standards**: Verified tour descriptions; professional photography; safety information; accessibility details.
+
+### Booking Engine Requirements
+- **Availability Checking**: Atomic operations; race condition prevention; timeout handling.
+- **Price Calculation**: Dynamic pricing; group discounts; early bird rates; currency conversion.
+- **Hold & Release**: Temporary booking holds; payment timeouts; inventory release automation.
+- **Confirmation Process**: Instant confirmation vs manual approval; operator notifications; customer communications.
+
+### Payment Processing Rules
+- **Multi-Currency Support**: Real-time exchange rates; local payment methods; tax calculations.
+- **Payment Timing**: Immediate vs deferred charging; deposit vs full payment; installment options.
+- **Refund Policies**: Cancellation windows; partial refunds; operator-specific policies; force majeure handling.
+- **Revenue Split**: Platform commission; operator payouts; tax handling; dispute resolution.
+
+## Location & Mapping Services
+
+### Geospatial Data Requirements
+```typescript
+// Core location entities
+interface Location {
+  id: string;
+  name: string;
+  coordinates: {
+    latitude: number;
+    longitude: number;
+  };
+  country: string;
+  region: string;
+  timezone: string;
+  weatherApiEndpoint?: string;
+}
+
+interface POI {
+  id: string;
+  locationId: string;
+  name: string;
+  type: 'historical' | 'natural' | 'cultural' | 'adventure' | 'culinary';
+  coordinates: Coordinates;
+  description: string;
+  accessibilityInfo: AccessibilityInfo;
+  operatingHours?: OperatingHours;
+}
+```
+
+### Map Integration Patterns
+- **Provider Strategy**: Google Maps (web/Android), Apple Maps (iOS), Mapbox (custom styling).
+- **Offline Support**: Tile caching; route downloads; offline search; sync strategies.
+- **Route Optimization**: Multi-stop tours; traffic consideration; accessibility routing; transport modes.
+- **Custom Markers**: Tour locations; meeting points; attractions; emergency services; accessibility features.
+
+### Location Privacy & Permissions
+- **Permission Strategy**: Progressive permission requests; clear value propositions; graceful degradation.
+- **Precision Controls**: Coarse vs fine location; user-controlled accuracy; battery optimization.
+- **Background Location**: Only for active tours; clear user notifications; automatic cleanup.
+- **Data Retention**: Location history policies; user deletion rights; anonymization strategies.
+
+## Offline-First Architecture
+
+### Critical Offline Scenarios
+1. **Active Tour Participation**: GPS tracking; map access; emergency contacts; tour information.
+2. **Booking Completion**: Form persistence; payment queuing; confirmation delays.
+3. **Trip Planning**: Saved tours; wishlists; itinerary building; content browsing.
+4. **Travel Documentation**: Booking confirmations; tickets; emergency information; contact details.
+
+### Sync Strategy Implementation
+```kotlin
+// KMM shared sync strategy
+sealed class SyncOperation {
+    data class BookingSync(val booking: BookingData) : SyncOperation()
+    data class ReviewSync(val review: ReviewData) : SyncOperation()
+    data class ProfileSync(val profile: UserProfile) : SyncOperation()
+    data class WishlistSync(val items: List<WishlistItem>) : SyncOperation()
+}
+
+interface SyncManager {
+    suspend fun queueOperation(operation: SyncOperation)
+    suspend fun syncWhenOnline(): Result<SyncResult>
+    fun observeConnectivity(): Flow<NetworkState>
+    suspend fun resolveConflicts(conflicts: List<DataConflict>): ConflictResolution
+}
+```
+
+### Conflict Resolution Rules
+- **User Preference**: User modifications take precedence over server updates.
+- **Recency**: Most recent change wins with proper timestamp validation.
+- **Business Logic**: Booking confirmations override user cancellations; payment status is authoritative.
+- **Graceful Degradation**: Show stale data with clear indicators; queue operations for later sync.
+
+## Real-Time Features & Communication
+
+### Live Updates Architecture
+- **WebSocket Channels**: Booking status; tour updates; weather alerts; emergency notifications.
+- **Push Notifications**: Booking confirmations; payment receipts; tour reminders; emergency alerts.
+- **Event Sourcing**: Booking state changes; payment events; tour modifications; user actions.
+- **Message Queuing**: Reliable delivery; retry logic; dead letter queues; monitoring.
+
+### Notification Strategy
+```typescript
+// Notification event types
+type NotificationEvent = {
+  type: 'booking_confirmed' | 'payment_received' | 'tour_updated' | 'weather_alert' | 'emergency';
+  priority: 'low' | 'normal' | 'high' | 'critical';
+  channels: ('push' | 'email' | 'sms' | 'in_app')[];
+  scheduling?: {
+    sendAt: Date;
+    timezone: string;
+    respectQuietHours: boolean;
+  };
+  personalization: {
+    userId: string;
+    language: string;
+    preferences: NotificationPreferences;
+  };
+  content: {
+    title: string;
+    body: string;
+    actionUrl?: string;
+    imageUrl?: string;
+  };
+};
+```
+
+## Travel-Specific Security Considerations
+
+### Data Sensitivity Classification
+- **Highly Sensitive**: Passport numbers; payment data; exact location tracking; emergency contacts.
+- **Sensitive**: Full names; birth dates; travel itineraries; communication logs.
+- **Internal**: User preferences; search history; anonymous analytics; support tickets.
+- **Public**: Tour descriptions; reviews; public itineraries; general location data.
+
+### Compliance Requirements
+- **GDPR**: Right to be forgotten; data portability; consent management; cross-border transfers.
+- **KVKK**: Turkish data protection; local data residency; explicit consent; breach notification.
+- **PCI DSS**: Card data protection; secure transmission; tokenization; regular audits.
+- **Travel Regulations**: Passenger data requirements; customs declarations; visa information handling.
+
+### Emergency Protocols
+- **Traveler Safety**: Emergency contact systems; location sharing; local authority integration.
+- **Data Breach Response**: Immediate notification; service isolation; user communication; regulatory reporting.
+- **Service Disruption**: Failover procedures; communication plans; refund processes; alternative arrangements.
+
+## Performance & Scalability Patterns
+
+### Travel Industry Load Patterns
+- **Seasonal Peaks**: Summer travel; holiday seasons; school breaks; special events.
+- **Geographic Scaling**: Time zone considerations; regional data centers; content localization.
+- **Booking Surges**: Flash sales; viral destinations; group bookings; last-minute deals.
+- **Mobile-Heavy Usage**: Responsive design; progressive web app; offline capabilities; touch optimization.
+
+### Caching Strategies
+```typescript
+// Multi-level caching for travel data
+interface TravelDataCache {
+  // Static content (long TTL)
+  tourDescriptions: CacheLayer<Tour>; // 24h TTL
+  locationInfo: CacheLayer<Location>; // 12h TTL
+  
+  // Dynamic content (short TTL)
+  availability: CacheLayer<AvailabilityData>; // 5min TTL
+  pricing: CacheLayer<PriceData>; // 2min TTL
+  weather: CacheLayer<WeatherData>; // 30min TTL
+  
+  // User-specific (session-based)
+  userPreferences: CacheLayer<UserPreferences>; // Session
+  searchHistory: CacheLayer<SearchQuery[]>; // Session
+  
+  // Real-time (no cache)
+  paymentStatus: DirectFetch<PaymentStatus>;
+  liveLocation: DirectFetch<LocationData>;
+}
+```
+
+## Integration Points & External Services
+
+### Required Third-Party Integrations
+- **Payment Processors**: Stripe (global), iyzico (Turkey), PayPal, Apple/Google Pay.
+- **Mapping Services**: Google Maps API, Apple MapKit, Mapbox, OpenStreetMap.
+- **Weather APIs**: OpenWeatherMap, AccuWeather, local meteorological services.
+- **Translation Services**: Google Translate API, Azure Translator, human translation services.
+- **Communication**: Twilio (SMS), SendGrid (email), OneSignal (push), Zendesk (support).
+
+### API Rate Limiting & Cost Management
+- **Usage Monitoring**: API call tracking; cost analysis; quota management; alert thresholds.
+- **Fallback Strategies**: Multiple providers; graceful degradation; cached responses; user notifications.
+- **Cost Optimization**: Request batching; data compression; intelligent caching; usage analytics.
+
+## Testing Strategies for Travel Domain
+
+### Travel-Specific Test Scenarios
+```gherkin
+Feature: Multi-Currency Booking Flow
+  Scenario: Tourist books tour with foreign currency
+    Given I am browsing from Germany
+    And my preferred currency is EUR
+    When I book a tour priced in USD
+    Then I should see converted prices in EUR
+    And payment should process in EUR
+    And operator should receive USD equivalent
+    And exchange rate should be clearly disclosed
+
+Feature: Offline Tour Participation
+  Scenario: Active tour with network loss
+    Given I have an active tour booking
+    And I am at the tour meeting point
+    When I lose internet connectivity
+    Then I should still access tour details
+    And GPS tracking should continue
+    And emergency contacts should be available
+    And location data should queue for sync
+```
+
+### Performance Testing Requirements
+- **Load Testing**: Peak booking periods; flash sales; viral destinations; group bookings.
+- **Stress Testing**: Payment gateway failures; map service outages; database overload.
+- **Mobile Testing**: Slow networks; limited storage; battery optimization; offline scenarios.
+- **Geographic Testing**: Cross-region latency; CDN performance; local regulations; currency handling.
+
+## Success Metrics & KPIs
+
+### Business Metrics
+- **Conversion Rates**: Search → View → Book → Pay → Complete.
+- **User Engagement**: Return visits; wishlist usage; review completion; referral rates.
+- **Revenue Metrics**: GMV growth; commission rates; average booking value; customer lifetime value.
+- **Operational Efficiency**: Booking confirmation time; customer support resolution; refund processing.
+
+### Technical Metrics
+- **Performance**: Page load times; app startup; search response; payment completion.
+- **Reliability**: Uptime; error rates; payment success; data synchronization.
+- **User Experience**: Bounce rates; task completion; accessibility compliance; mobile usability.
+- **Security**: Incident response time; vulnerability patching; compliance audit results.
+
+## Regulatory & Compliance Considerations
+
+### Travel Industry Regulations
+- **Consumer Protection**: Clear terms; cancellation rights; dispute resolution; travel insurance.
+- **Accessibility**: ADA compliance; WCAG standards; alternative formats; assistive technology.
+- **Data Protection**: GDPR/KVKV compliance; cookie consent; data minimization; breach notification.
+- **Financial Services**: Payment processing; anti-money laundering; tax collection; revenue reporting.
+
+### International Considerations
+- **Multi-Language**: UI translation; content localization; cultural adaptation; RTL support.
+- **Multi-Currency**: Exchange rates; local payment methods; tax calculations; revenue recognition.
+- **Cross-Border**: Data residency; regulatory compliance; service availability; content restrictions.
+- **Time Zones**: Booking windows; notification timing; support hours; synchronized scheduling.

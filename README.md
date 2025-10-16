@@ -4,7 +4,6 @@ A comprehensive mobile super application connecting tourists, locals, and activi
 
 ## 🏗️ Architecture
 
-This project uses **Kotlin Multiplatform Mobile (KMM)** for shared business logic between Android and iOS platforms, with **Firebase** as the cloud backend infrastructure.
 
 ### Tech Stack
 - **Shared**: Kotlin Multiplatform, Ktor, Kotlinx.serialization

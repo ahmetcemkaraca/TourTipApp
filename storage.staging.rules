@@ -1,0 +1,59 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Staging storage rules - more permissive for testing
+    
+    // User profile images
+    match /users/{userId}/profile/{imageId} {
+      allow read: if true; // Public read in staging
+      allow write: if request.auth != null && 
+        (request.auth.uid == userId || 
+         isAdmin() || 
+         isStagingTester());
+    }
+    
+    // Tour images
+    match /tours/{tourId}/images/{imageId} {
+      allow read: if true; // Public read
+      allow write: if request.auth != null && 
+        (isAdmin() || isStagingTester());
+    }
+    
+    // User uploads (documents, etc.)
+    match /uploads/{userId}/{document} {
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == userId || 
+         isAdmin() || 
+         isStagingTester());
+    }
+    
+    // Test files - staging only
+    match /test_files/{fileName} {
+      allow read, write: if request.auth != null && 
+        (isAdmin() || isStagingTester());
+    }
+    
+    // Staging logs and dumps
+    match /staging_data/{fileName} {
+      allow read, write: if request.auth != null && 
+        (isAdmin() || isStagingTester());
+    }
+    
+    // Helper functions
+    function isAdmin() {
+      return request.auth != null && 
+        request.auth.token.role == 'admin';
+    }
+    
+    function isStagingTester() {
+      return request.auth != null && 
+        request.auth.token.role == 'staging_tester';
+    }
+    
+    // File size and type validation (relaxed for staging)
+    function isValidFile() {
+      return resource.size < 50 * 1024 * 1024 && // 50MB limit
+        resource.contentType.matches('image/.*|application/pdf|text/.*');
+    }
+  }
+}

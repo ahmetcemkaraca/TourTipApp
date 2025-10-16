@@ -1,0 +1,121 @@
+---
+description: iOS Swift development standards for TourTrip.app - native UI with KMM integration.
+alwaysApply: false
+globs: "iosApp/**/*.swift,**/iosMain/**/*.swift"
+---
+
+As an iOS Swift developer in TourTrip.app:
+
+## Core Standards
+- **UI**: SwiftUI + SF Symbols; dynamic type; dark mode; 60fps animations; comprehensive accessibility.
+- **Architecture**: MVVM pattern; dependency injection via protocols; Combine for reactive streams.
+- **KMM Integration**: Bridge to shared business logic via Kotlin/Native; platform-specific UI and system APIs.
+- **Networking**: URLSession with async/await; Alamofire for complex scenarios; retry/backoff; certificate pinning.
+
+## TourTrip.app Specifics
+- **Offline-First**: Critical for travel; Core Data/Realm sync; offline map caching strategies.
+- **Location Services**: Core Location; background location with user consent; geofencing for travel alerts.
+- **Maps Integration**: MapKit/Mapbox; offline routing; custom annotations; 3D landmarks.
+- **Payment Integration**: Apple Pay; biometric authentication; secure enclave for sensitive data.
+- **Push Notifications**: APNs; travel updates; booking confirmations; rich notifications with actions.
+
+## Security & Privacy
+- **Data Protection**: Keychain for tokens; Secure Enclave when available; no PII in logs.
+- **Network Security**: Certificate pinning; App Transport Security hardened; API key obfuscation.
+- **Permissions**: Clear privacy strings; progressive permission requests; location accuracy options.
+- **Authentication**: Face ID/Touch ID integration; secure session handling; auto-logout on backgrounding.
+
+## Performance & Quality
+- **Memory Management**: Weak references for delegates; avoid retain cycles; use Instruments regularly.
+- **Background Tasks**: BGTaskScheduler for sync; foreground for active navigation; respect battery life.
+- **Startup Optimization**: Lazy loading; precompiled storyboards; defer heavy initialization.
+- **Testing**: XCTest + async/await; XCUITest for critical flows; snapshot testing for UI consistency.
+
+## Build & Distribution
+- **Xcode Project**: Multiple schemes (Debug/Release/Staging); .xcconfig for environment variables.
+- **Code Quality**: SwiftLint + SwiftFormat; SonarQube analysis; dependency scanning.
+- **App Store**: Automated builds with Fastlane; TestFlight distribution; phased release strategy.
+
+## Self-Check Protocol (iOS)
+Before submitting code:
+- [ ] SwiftUI previews work across device sizes and orientations
+- [ ] No force unwrapping (!) without clear justification and error handling
+- [ ] Memory leaks checked with Instruments
+- [ ] App launches successfully from background states
+- [ ] Accessibility labels and traits properly set
+- [ ] Offline functionality validated in airplane mode
+- [ ] Privacy strings clearly explain data usage
+- [ ] App size within reasonable bounds (<100MB for travel app)
+
+## Soft Blocks (iOS)
+REJECT these patterns and suggest alternatives:
+- ❌ Force unwrapping optionals without error handling strategy
+- ❌ Storing sensitive data in UserDefaults or plist files
+- ❌ Requesting sensitive permissions without clear user value proposition
+- ❌ Using UIKit for new features (prefer SwiftUI-first approach)
+- ❌ Background location without visible user benefit and clear notifications
+- ❌ Hardcoding API endpoints or secrets in code
+
+## SwiftUI Best Practices
+```swift
+// Preferred: Proper state management
+struct TourListView: View {
+    @StateObject private var viewModel = TourListViewModel()
+    @Environment(\.networkMonitor) private var networkMonitor
+    
+    var body: some View {
+        NavigationView {
+            Group {
+                switch viewModel.state {
+                case .loading:
+                    ProgressView("Loading tours...")
+                case .success(let tours):
+                    TourList(tours: tours)
+                case .error(let error):
+                    ErrorView(error: error) {
+                        viewModel.retryLoading()
+                    }
+                case .empty:
+                    EmptyStateView()
+                }
+            }
+            .navigationTitle("Tours")
+            .task {
+                await viewModel.loadTours()
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+// Required: Proper error handling
+enum TourError: LocalizedError {
+    case networkUnavailable
+    case invalidResponse
+    case authenticationRequired
+    
+    var errorDescription: String? {
+        switch self {
+        case .networkUnavailable:
+            return "Network connection unavailable. Please check your internet connection."
+        case .invalidResponse:
+            return "Invalid server response. Please try again."
+        case .authenticationRequired:
+            return "Please sign in to view tours."
+        }
+    }
+}
+```
+
+## Platform Integration
+- **Core Data**: Use CloudKit sync for user data; proper migration strategies
+- **HealthKit**: For fitness-related tours; proper authorization and privacy handling
+- **Core Spotlight**: Search integration for bookings and favorite tours
+- **SiriKit**: Shortcuts for common actions (check booking status, get directions)
+- **WidgetKit**: Show upcoming trips and travel status
+
+## Dependencies Management
+- **Swift Package Manager**: Prefer SPM over CocoaPods for new dependencies
+- **Version Pinning**: Lock major versions; regular security updates
+- **KMM Bridge**: Maintain clean interface to shared Kotlin code
+- **Third-Party Libraries**: Minimize dependencies; prefer Apple frameworks when available

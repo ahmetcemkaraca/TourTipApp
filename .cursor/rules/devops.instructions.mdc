@@ -1,0 +1,124 @@
+---
+description: DevOps engineering standards for TourTrip.app infrastructure and deployment automation.
+alwaysApply: false
+globs: "**/*.{yml,yaml,dockerfile,sh,ps1,tf,hcl}"
+---
+
+As DevOps engineer in TourTrip.app:
+
+## Infrastructure as Code
+- **Container Orchestration**: Docker + Kubernetes for production; Docker Compose for development.
+- **Infrastructure**: Terraform for cloud resources; Helm charts for Kubernetes deployments.
+- **Environment Management**: Separate configs for dev/staging/production; infrastructure parity.
+- **Secrets Management**: External secret stores (AWS Secrets Manager/HashiCorp Vault); rotation policies.
+
+## CI/CD Pipeline Strategy
+- **Source Control**: GitHub Actions for CI/CD; branch protection rules; required status checks.
+- **Build Process**: Multi-stage Docker builds; dependency caching; parallel job execution.
+- **Testing Gates**: Unit → Integration → E2E → Security → Performance tests in sequence.
+- **Deployment**: Blue-green deployment strategy; automated rollback on failure; health checks.
+
+## TourTrip.app Deployment Architecture
+- **Microservices**: Independent deployment per service; service mesh for communication.
+- **Databases**: PostgreSQL primary/replica setup; Redis cluster for caching; backup automation.
+- **CDN & Assets**: CloudFront/Cloudflare for global distribution; optimized image delivery.
+- **Monitoring**: Prometheus + Grafana; centralized logging with ELK stack; distributed tracing.
+
+## Security & Compliance
+- **Vulnerability Scanning**: Container image scanning; dependency vulnerability checks; SAST/DAST.
+- **Access Control**: RBAC for cluster access; service accounts with minimal permissions.
+- **Network Security**: VPC with private subnets; WAF protection; DDoS mitigation.
+- **Compliance**: SOC 2 controls; audit logging; data encryption at rest and transit.
+
+## Mobile App Distribution
+- **Android**: Play Console deployment; staged rollouts; crash reporting; performance monitoring.
+- **iOS**: App Store Connect automation; TestFlight distribution; certificate management.
+- **Build Automation**: Fastlane for mobile builds; code signing; automated screenshots.
+- **Release Management**: Feature flags; A/B testing infrastructure; rollback capabilities.
+
+## Monitoring & Observability
+- **Application Metrics**: Custom business metrics; SLA monitoring; alerting thresholds.
+- **Infrastructure Monitoring**: Resource utilization; cost optimization; capacity planning.
+- **Log Management**: Structured logging; log aggregation; PII redaction; retention policies.
+- **Incident Response**: On-call rotation; runbooks; post-mortem process; escalation procedures.
+
+## Self-Check Protocol (DevOps)
+Before deployment:
+- [ ] All secrets externalized and properly managed
+- [ ] Health checks configured for all services
+- [ ] Rollback procedure tested and documented
+- [ ] Resource limits and autoscaling configured
+- [ ] Monitoring alerts configured for critical metrics
+- [ ] Backup and disaster recovery validated
+- [ ] Security scanning passed for all components
+- [ ] Performance benchmarks met
+
+## Soft Blocks (DevOps)
+REJECT these practices and provide secure alternatives:
+- ❌ Hardcoded secrets in configuration files or environment variables
+- ❌ Privileged container execution without justification
+- ❌ Direct database access from applications (use connection pooling)
+- ❌ Missing backup validation and recovery testing
+- ❌ Deployment without proper health checks and rollback procedures
+- ❌ Production access without proper audit trails
+
+## Environment Configuration
+```yaml
+# Preferred: Proper secret management
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tourtrip-secrets
+  annotations:
+    external-secrets.io/backend: "vault"
+    external-secrets.io/key: "secret/tourtrip"
+type: Opaque
+data:
+  database-url: <from-vault>
+  stripe-secret-key: <from-vault>
+  jwt-secret: <from-vault>
+
+---
+# Application deployment with proper resource limits
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tourtrip-api
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  template:
+    spec:
+      containers:
+      - name: api
+        image: tourtrip/api:v1.2.3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+```
+
+## Disaster Recovery & Business Continuity
+- **Backup Strategy**: Automated daily backups; cross-region replication; point-in-time recovery.
+- **High Availability**: Multi-AZ deployment; load balancing; failover automation.
+- **Data Recovery**: Backup validation; recovery time objectives (RTO < 4h); recovery point objectives (RPO < 1h).
+- **Communication Plan**: Status page; customer notifications; internal escalation procedures.

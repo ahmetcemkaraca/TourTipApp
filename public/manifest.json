@@ -1,0 +1,164 @@
+{
+  "name": "TourTrip - Seyahat ve Tur Platformu",
+  "short_name": "TourTrip",
+  "description": "Türkiye'nin en büyük seyahat ve tur rezervasyon platformu. Tur, restoran ve mağaza rezervasyonlarınızı kolayca yapın.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "tr-TR",
+  "dir": "ltr",
+
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+
+  "categories": [
+    "travel",
+    "lifestyle",
+    "shopping",
+    "food",
+    "business"
+  ],
+
+  "screenshots": [
+    {
+      "src": "/screenshots/home-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/home-tablet.png",
+      "sizes": "768x1024",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/tour-detail.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+
+  "shortcuts": [
+    {
+      "name": "Tur Ara",
+      "short_name": "Tur Ara",
+      "description": "Kullanılabilir turları ara ve keşfet",
+      "url": "/tours",
+      "icons": [
+        {
+          "src": "/icons/shortcut-search.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Restoranlar",
+      "short_name": "Restoranlar",
+      "description": "Yakındaki restoranları keşfet",
+      "url": "/restaurants",
+      "icons": [
+        {
+          "src": "/icons/shortcut-restaurant.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Gezi Planla",
+      "short_name": "Planla",
+      "description": "Yeni bir gezi planla",
+      "url": "/planner",
+      "icons": [
+        {
+          "src": "/icons/shortcut-planner.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "AI Asistan",
+      "short_name": "AI",
+      "description": "AI seyahat asistanınla konuş",
+      "url": "/ai-assistant",
+      "icons": [
+        {
+          "src": "/icons/shortcut-ai.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.tourtrip.app",
+      "id": "com.tourtrip.app"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/tourtrip/id123456789"
+    }
+  ],
+
+  "prefer_related_applications": false,
+
+  "iarc_rating_id": "",
+
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

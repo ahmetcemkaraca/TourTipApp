@@ -1,0 +1,140 @@
+---
+description: Master governance rules for TourTrip.app project - autonomous development guide with trio workflow, security gates, and consistency checks.
+alwaysApply: true
+globs: "**/*"
+---
+
+## Project Strategy & Domain Context
+
+- **Architecture**: Microservice, cloud-native, containerized; clear service boundaries for tours, bookings, payments, users, notifications.
+- **Mobile**: KMM for shared business logic; native UI per platform (Jetpack Compose / SwiftUI).
+- **Web**: Next.js (App Router, RSC), responsive design, progressive enhancement.
+- **Deployment**: Phased rollouts; blue-green where possible; feature flags for gradual enablement.
+- **Security**: Zero-trust model; OWASP Top 10; PCI-DSS for payments; KVKV/GDPR compliance.
+- **Testing**: Pyramid strategy (unit > integration > e2e); contract testing for microservices.
+- **Localization/Accessibility**: Multi-language, multi-currency, WCAG 2.1 AA compliance.
+
+## TourTrip.app Domain Specifics
+
+- **Core Entities**: Tours, Itineraries, Bookings, Users, Reviews, Locations, Payments, Notifications.
+- **Key Flows**: Discovery → Selection → Booking → Payment → Trip Management → Review.
+- **Offline-First**: Critical for mobile; sync strategies for bookings, maps, itineraries.
+- **Geospatial**: Maps (Google/Apple/Mapbox), routes, offline tiles, location permissions.
+- **Payments**: Multi-currency, multi-provider (Stripe/local), refunds, partial payments.
+- **Real-time**: Live updates (weather, delays), chat support, push notifications.
+
+## Trio Workflow (Single Source of Truth)
+
+MANDATORY: Always maintain and reference these files before coding:
+- `requirements.md`: EARS format requirements, acceptance criteria, business rules.
+- `design.md`: Architecture decisions, service contracts, data models, Mermaid diagrams.
+- `tasks.md`: Ordered implementation tasks, progress tracking, dependencies.
+
+Additional artifacts to maintain:
+- `README.md`: Setup, run, test, deploy instructions.
+- `CHANGELOG.md`: User-facing changes, SemVer-aligned.
+- `.env.example`: All environment variables documented.
+- `RISKS.md`: Top risks and mitigations.
+
+## Quality Gates & Release Policy
+
+NEVER proceed without:
+- ✅ Lint/format passes (ESLint, ktlint, SwiftLint)
+- ✅ Tests green (unit + integration minimum; e2e for critical flows)
+- ✅ Security scan passes (dependency audit, secret detection)
+- ✅ Performance budgets met (mobile cold start < 3s, web LCP < 2.5s)
+
+SemVer Guidelines:
+- **MAJOR**: Breaking API changes, incompatible migrations, removed features.
+- **MINOR**: New features, deprecations (with grace period), new endpoints.
+- **PATCH**: Bug fixes, performance improvements, docs/config updates.
+
+## AI Execution Standards
+
+- **Language Policy**: All code, variables, functions, comments in English. User responses in Turkish.
+- **Code Quality**: Fully functional, no placeholders, proper imports, error handling.
+- **Testing**: Include unit tests; integration tests for APIs; UI tests for critical paths.
+- **Documentation**: Update trio files; provide run/test commands; summarize changes.
+
+## Soft Blocks & Safety Guards
+
+STOP and propose alternatives if asked to:
+- Commit secrets, API keys, or credentials to version control
+- Skip security validations or authentication requirements
+- Disable essential logging or monitoring
+- Merge failing tests or bypass CI checks
+- Implement features without considering mobile/offline scenarios
+
+## Input Validation & Contradiction Detection
+
+Before implementing, verify:
+- **Technical Feasibility**: Files/paths exist, modules resolve, build system supports change.
+- **Architecture Alignment**: Fits with microservice boundaries, doesn't break contracts.
+- **Security Compliance**: No PII exposure, proper validation, encrypted sensitive data.
+- **Performance Impact**: Consider mobile constraints, offline scenarios, loading states.
+
+If contradictions found, notify user with:
+- Specific conflict description
+- 2-3 viable alternatives with trade-offs
+- Recommended approach with justification
+
+## Consistency Self-Check Protocol
+
+Before marking any task complete, verify:
+
+### Code Standards
+- [ ] Naming follows platform conventions (camelCase JS/TS, snake_case SQL, PascalCase classes)
+- [ ] No mixed architectural patterns within same module
+- [ ] Error handling consistent across service boundaries
+- [ ] Logging structured and PII-safe
+
+### API Contracts
+- [ ] Request/response schemas validated with Zod/TypeBox
+- [ ] HTTP status codes semantically correct (200, 201, 400, 401, 403, 404, 500)
+- [ ] API versioning strategy followed
+- [ ] Idempotency keys for write operations
+
+### Mobile Specifics
+- [ ] KMM boundaries respected (shared logic vs platform UI)
+- [ ] Offline-first patterns implemented
+- [ ] Background sync strategies defined
+- [ ] Platform permissions justified with user-facing copy
+
+### Security Checklist
+- [ ] No secrets in code or logs
+- [ ] Input validation on all external data
+- [ ] Output encoding for display
+- [ ] Rate limiting on public endpoints
+- [ ] Audit trails for sensitive operations
+
+### Performance Validation
+- [ ] Database queries optimized (no N+1)
+- [ ] Image assets compressed and responsive
+- [ ] Bundle sizes within budgets
+- [ ] Caching strategies appropriate
+
+## Technology Stack & Constraints
+
+- **Mobile (Shared)**: KMM, Ktor client, SQLDelight, Kotlinx.serialization, coroutines + Flow.
+- **Android**: Jetpack Compose, Material 3, Hilt DI, Room, WorkManager, encrypted preferences.
+- **iOS**: SwiftUI, Combine, Core Data/Realm, Keychain, Background App Refresh.
+- **Backend**: Node.js (Fastify/Nest), TypeScript strict, Postgres, Redis, Docker.
+- **Web**: Next.js 14+, React 18, Tailwind CSS, Radix UI, TanStack Query.
+- **Infrastructure**: Docker Compose (dev), Kubernetes (prod), observability stack.
+
+## Emergency Protocols
+
+- **Rollback**: Every deployment must have tested rollback procedure documented.
+- **Security Incidents**: Immediate secret rotation, audit log analysis, user notification plan.
+- **Performance Degradation**: Circuit breakers, graceful degradation, monitoring alerts.
+- **Data Issues**: Backup verification, point-in-time recovery, data migration validation.
+
+## Processing Priority Order
+
+When instructions conflict, follow this hierarchy:
+1. Security and compliance requirements (non-negotiable)
+2. project.instructions.mdc (this file)
+3. architect.instructions.mdc 
+4. Role-specific .mdc files
+5. Chat context and user preferences
+6. Default platform conventions

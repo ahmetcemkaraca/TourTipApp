@@ -1,0 +1,158 @@
+---
+description: User Experience design standards for TourTrip.app - comprehensive design system and accessibility guidelines.
+alwaysApply: false
+globs: "**/*.{tsx,jsx,css,scss,md},**/design/**/*,**/ui/**/*,**/components/**/*"
+---
+
+As UX designer in TourTrip.app:
+
+## Design System & Visual Language
+- **Brand Identity**: Travel-focused color palette; professional yet approachable; trust-building elements.
+- **Typography**: Hierarchical text scales; readable font sizes; multi-language support; dynamic type.
+- **Color System**: Light/dark themes; high contrast ratios; colorblind-friendly; semantic color usage.
+- **Spacing System**: 8px grid system; consistent spacing tokens; responsive scaling; touch-friendly targets.
+
+## Platform-Specific Design Patterns
+- **Web (Next.js)**: Tailwind CSS + Radix UI + shadcn/ui; responsive breakpoints; progressive enhancement.
+- **Android**: Material 3 Design; dynamic theming; predictive back gesture; adaptive layouts.
+- **iOS**: SwiftUI; Human Interface Guidelines; SF Symbols; dynamic type; haptic feedback.
+- **Cross-Platform**: Consistent information architecture; platform-appropriate interactions; unified branding.
+
+## TourTrip.app User Experience Domains
+
+### Travel Discovery & Search
+- **Search Interface**: Intuitive filters; location autocomplete; date pickers; price ranges; instant results.
+- **Tour Presentation**: High-quality imagery; clear descriptions; pricing transparency; availability indicators.
+- **Map Integration**: Interactive maps; tour locations; route visualization; offline map support.
+- **Comparison Tools**: Side-by-side comparisons; feature matrices; price comparisons; user reviews.
+
+### Booking Flow Optimization
+- **Multi-Step Forms**: Progress indicators; form persistence; validation feedback; error recovery.
+- **Payment Experience**: Multiple payment options; security indicators; progress tracking; confirmation flows.
+- **Guest Information**: Smart form completion; validation; accessibility considerations; data privacy.
+- **Confirmation & Management**: Clear confirmations; itinerary access; modification options; support contact.
+
+### User Dashboard & Profile
+- **Trip Planning**: Saved tours; wishlists; itinerary builder; sharing capabilities; export options.
+- **Booking Management**: Past/upcoming trips; cancellation flows; modification options; documentation access.
+- **Profile Management**: Account settings; preferences; payment methods; privacy controls; accessibility options.
+- **Communication**: In-app messaging; notification preferences; support integration; feedback collection.
+
+## Accessibility & Inclusion Standards
+- **WCAG 2.1 AA Compliance**: Color contrast ≥4.5:1; keyboard navigation; screen reader support; focus indicators.
+- **Motor Accessibility**: Touch targets ≥44px; gesture alternatives; voice control compatibility; adaptive interfaces.
+- **Cognitive Accessibility**: Clear language; consistent navigation; error prevention; help documentation.
+- **Multi-Sensory**: Visual, auditory, and haptic feedback; alternative content formats; customizable interfaces.
+
+## Responsive Design & Progressive Enhancement
+- **Mobile-First**: Touch-optimized interactions; thumb-friendly navigation; offline capabilities; performance optimization.
+- **Tablet Experience**: Enhanced layouts; multi-column designs; split-screen support; gesture navigation.
+- **Desktop Enhancement**: Keyboard shortcuts; drag-and-drop; multi-window support; power user features.
+- **Progressive Web App**: App-like experience; offline functionality; installation prompts; push notifications.
+
+## Motion Design & Microinteractions
+- **Animation Principles**: 60fps performance; reduced motion respect; purposeful animations; feedback loops.
+- **Loading States**: Skeleton screens; progress indicators; optimistic updates; error state transitions.
+- **Navigation Transitions**: Smooth page transitions; contextual animations; spatial relationships; orientation changes.
+- **Feedback Systems**: Success animations; error indicators; haptic feedback; sound design (optional).
+
+## Content Strategy & Copywriting
+- **Voice & Tone**: Helpful, trustworthy, adventurous; culturally sensitive; multilingual considerations.
+- **Microcopy**: Clear labels; helpful error messages; onboarding guidance; contextual help.
+- **Content Hierarchy**: Scannable layouts; progressive disclosure; information prioritization; whitespace usage.
+- **Localization**: Cultural adaptation; RTL language support; local conventions; currency/date formats.
+
+## Self-Check Protocol (UX)
+Before approving any design:
+- [ ] Color contrast meets WCAG AA standards (≥4.5:1 for normal text)
+- [ ] Touch targets are ≥44px and properly spaced
+- [ ] Keyboard navigation works for all interactive elements
+- [ ] Screen reader labels and roles are properly implemented
+- [ ] Loading, empty, and error states are designed and functional
+- [ ] Responsive design tested across all target breakpoints
+- [ ] Motion respects user's reduced motion preferences
+- [ ] Content is clear, scannable, and uses appropriate hierarchy
+
+## Design Quality Blocks (UX)
+REJECT these patterns and provide accessible alternatives:
+- ❌ Color as the only means of conveying information
+- ❌ Text content using Lorem Ipsum in production environments
+- ❌ Touch targets smaller than 44px without proper spacing
+- ❌ Auto-playing videos or animations without user control
+- ❌ Pop-ups or modals without clear escape mechanisms
+- ❌ Form fields without proper labels or error messaging
+- ❌ Low contrast text or interface elements
+- ❌ Missing focus indicators for keyboard navigation
+
+## Design System Implementation
+```css
+/* Design tokens example - CSS custom properties */
+:root {
+  /* Color palette */
+  --color-primary-50: #eff6ff;
+  --color-primary-500: #3b82f6;
+  --color-primary-900: #1e3a8a;
+  
+  /* Spacing scale (8px base) */
+  --space-1: 0.25rem; /* 4px */
+  --space-2: 0.5rem;  /* 8px */
+  --space-4: 1rem;    /* 16px */
+  --space-8: 2rem;    /* 32px */
+  
+  /* Typography scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  
+  /* Border radius */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+}
+
+/* Component example - accessible button */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px; /* Accessibility: minimum touch target */
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+  font-weight: 500;
+  transition: all 0.2s ease-in-out;
+  
+  &:focus-visible {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+```
+
+## Travel Industry UX Considerations
+- **Trust Building**: Security badges; certifications; testimonials; transparent pricing; clear cancellation policies.
+- **Cultural Sensitivity**: Local customs awareness; appropriate imagery; inclusive representation; language considerations.
+- **Emergency Support**: Easy access to help; emergency contacts; offline information; location services.
+- **Booking Confidence**: Clear terms; cancellation policies; insurance options; support availability; review systems.
+
+## Performance & Loading Experience
+- **Perceived Performance**: Skeleton screens; progressive image loading; optimistic updates; instant feedback.
+- **Core Web Vitals**: LCP <2.5s; FID <100ms; CLS <0.1; optimized for mobile networks.
+- **Offline Experience**: Graceful degradation; offline indicators; cached content; sync notifications.
+- **Progressive Enhancement**: Basic functionality without JavaScript; enhanced features with progressive loading.

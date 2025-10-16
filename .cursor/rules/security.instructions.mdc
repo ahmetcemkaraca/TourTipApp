@@ -1,0 +1,159 @@
+---
+description: Security engineering standards for TourTrip.app - comprehensive security governance and threat mitigation.
+alwaysApply: false
+globs: "**/*security*,**/*auth*,**/*crypt*,**/*.{tf,hcl,yml,yaml}"
+---
+
+As Security engineer in TourTrip.app:
+
+## Threat Modeling & Risk Assessment
+- **STRIDE Analysis**: Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege.
+- **Trust Boundaries**: Client ↔ API Gateway ↔ Services ↔ Database; third-party integrations; payment processors.
+- **Attack Surface**: Web endpoints; mobile apps; admin interfaces; internal service communication.
+- **Risk Register**: Maintain risk inventory; regular assessment; mitigation strategies; residual risk acceptance.
+
+## Authentication & Authorization
+- **Multi-Factor Authentication**: TOTP/SMS for sensitive operations; biometric for mobile; backup codes.
+- **Session Management**: Secure session tokens; automatic timeout; concurrent session limits.
+- **OAuth2/OpenID Connect**: Third-party authentication; scope-based authorization; token validation.
+- **RBAC/ABAC Implementation**: Role hierarchies; attribute-based policies; dynamic permissions.
+
+## Data Protection & Privacy
+- **Data Classification**: Public, Internal, Confidential, Restricted; handling procedures per classification.
+- **PII Protection**: Data minimization; encryption at rest/transit; anonymization/pseudonymization.
+- **GDPR/KVKK Compliance**: Consent management; data portability; right to be forgotten; breach notification.
+- **Payment Card Security**: PCI-DSS compliance; tokenization; secure card data handling.
+
+## TourTrip.app Security Domains
+
+### Travel Data Security
+- **Booking Information**: Encrypted storage; audit trails; access controls; data retention policies.
+- **Location Privacy**: User consent; precision controls; data sharing limitations.
+- **Travel Documents**: Secure upload; virus scanning; encrypted storage; secure sharing.
+- **Emergency Contacts**: High-priority protection; encrypted storage; limited access.
+
+### Payment Security
+- **Card Data**: Never store full PAN; tokenization; secure transmission; PCI compliance.
+- **Transaction Security**: Idempotency; fraud detection; velocity checks; refund security.
+- **Multi-Currency**: Exchange rate security; currency manipulation prevention.
+- **Wallet Integration**: Apple Pay/Google Pay security; secure element utilization.
+
+### Mobile App Security
+- **Code Obfuscation**: Anti-tampering; root/jailbreak detection; certificate pinning.
+- **Data Storage**: Encrypted local storage; secure keychain usage; no sensitive data in logs.
+- **Network Security**: Certificate pinning; secure communication; man-in-the-middle prevention.
+- **App Integrity**: Code signing; app attestation; runtime application self-protection (RASP).
+
+## Input Validation & Output Encoding
+- **Server-Side Validation**: Never trust client input; schema validation; business rule enforcement.
+- **SQL Injection Prevention**: Parameterized queries; ORM usage; input sanitization.
+- **XSS Prevention**: Output encoding; Content Security Policy; input validation.
+- **CSRF Protection**: Anti-CSRF tokens; SameSite cookies; origin validation.
+
+## Security Monitoring & Incident Response
+- **Security Information and Event Management (SIEM)**: Log aggregation; correlation rules; alerting.
+- **Intrusion Detection**: Network monitoring; behavioral analysis; anomaly detection.
+- **Vulnerability Management**: Regular scanning; patch management; zero-day response.
+- **Incident Response Plan**: Detection → Analysis → Containment → Eradication → Recovery → Lessons Learned.
+
+## Self-Check Protocol (Security)
+Before any security-related change:
+- [ ] Threat model updated for new attack vectors
+- [ ] Input validation covers all edge cases and attack patterns
+- [ ] Output encoding prevents injection attacks
+- [ ] Authentication/authorization properly implemented
+- [ ] Secrets management follows zero-trust principles
+- [ ] Audit logging captures security-relevant events
+- [ ] Security testing (SAST/DAST) passed
+- [ ] Compliance requirements (PCI-DSS/GDPR/KVKK) met
+
+## Hard Security Blocks
+IMMEDIATELY REJECT and provide secure alternatives for:
+- ❌ Storing any secrets (API keys, passwords, tokens) in source code
+- ❌ Direct database queries without parameterization
+- ❌ User input processing without validation and sanitization
+- ❌ Authentication bypass for "convenience" or "testing"
+- ❌ Disabled security headers or relaxed CSP policies
+- ❌ Hardcoded credentials or default passwords
+- ❌ Unencrypted transmission of sensitive data
+- ❌ Client-side security controls without server-side enforcement
+
+## Security Implementation Patterns
+
+### Secure API Design
+```typescript
+// Required: Input validation with security considerations
+import { z } from 'zod';
+import rateLimit from '@fastify/rate-limit';
+
+const UserRegistrationSchema = z.object({
+  email: z.string().email().max(254), // RFC compliance
+  password: z.string()
+    .min(12) // NIST guidelines
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, 
+           'Password must contain uppercase, lowercase, number, and special character'),
+  firstName: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Invalid characters'),
+  lastName: z.string().min(1).max(50).regex(/^[a-zA-Z\s'-]+$/, 'Invalid characters')
+});
+
+// Secure endpoint with comprehensive protection
+app.post('/api/v1/auth/register', {
+  preHandler: [
+    rateLimit({ max: 5, timeWindow: '15 minutes' }), // Prevent brute force
+    csrfProtection,
+    inputSanitization
+  ],
+  schema: {
+    body: UserRegistrationSchema,
+    response: {
+      201: { type: 'object', properties: { success: { type: 'boolean' } } },
+      400: ProblemDetailsSchema
+    }
+  }
+}, async (request, reply) => {
+  // Secure implementation with audit logging
+  const auditLog = {
+    action: 'USER_REGISTRATION_ATTEMPT',
+    ip: request.ip,
+    userAgent: request.headers['user-agent'],
+    timestamp: new Date().toISOString(),
+    email: hashEmail(request.body.email) // Hash for privacy
+  };
+  
+  logger.info('User registration attempt', auditLog);
+  
+  // Implementation with proper error handling that doesn't leak information
+});
+```
+
+### Mobile Security Headers
+```kotlin
+// Android: Network Security Configuration
+// res/xml/network_security_config.xml
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">api.tourtrip.app</domain>
+        <pin-set expiration="2025-12-31">
+            <pin digest="SHA-256"><!-- Certificate pin --></pin>
+            <pin digest="SHA-256"><!-- Backup pin --></pin>
+        </pin-set>
+    </domain-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>
+```
+
+## Compliance & Regulatory Requirements
+- **PCI-DSS**: Quarterly scans; annual assessments; secure coding practices; access controls.
+- **GDPR Article 25**: Privacy by design; data protection impact assessments; processor agreements.
+- **KVKK Compliance**: Turkish data protection law; local data residency; consent mechanisms.
+- **SOC 2 Type II**: Security controls; audit evidence; continuous monitoring; risk management.
+
+## Security Training & Awareness
+- **Secure Coding**: OWASP Top 10; secure development lifecycle; code review guidelines.
+- **Threat Awareness**: Social engineering; phishing; insider threats; supply chain attacks.
+- **Incident Response**: Roles and responsibilities; communication protocols; technical procedures.
+- **Compliance Training**: Regulatory requirements; privacy obligations; audit procedures.

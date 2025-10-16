@@ -1,0 +1,379 @@
+---
+description: TourTrip.app website development standards - integrated web platform with backend compatibility and cross-system consistency.
+alwaysApply: false
+globs: "website/**/*,www/**/*,web/**/*,frontend/**/*,public/**/*,app/**/*,src/**/*"
+---
+
+# TourTrip.app Website Development Standards
+
+## Website Architecture & System Integration
+
+### Multi-System Compatibility
+- **Backend Integration**: Seamless API communication with Node.js microservices; unified error handling; consistent data models.
+- **Mobile App Alignment**: Shared design system; consistent user flows; cross-platform feature parity.
+- **Admin Dashboard**: Role-based access; operator management; analytics integration; content management.
+- **External Services**: Third-party integrations (maps, payments, communication); fallback strategies; cost optimization.
+
+### Website-Specific Technology Stack
+- **Core Framework**: Next.js 14+ with App Router; React 18 Server Components; TypeScript strict mode.
+- **Styling & UI**: Tailwind CSS + Radix UI + shadcn/ui; responsive design system; theme consistency.
+- **State Management**: Server-first approach; TanStack Query for API state; Zustand for complex client state.
+- **Authentication**: NextAuth.js with multiple providers; session management; role-based access control.
+- **Database Layer**: Direct PostgreSQL access for admin features; Redis for caching; search with Elasticsearch.
+
+## TourTrip.app Website Core Features
+
+### Public Marketing Site
+- **Landing Pages**: SEO-optimized; conversion-focused; A/B testable; performance-first.
+- **Tour Discovery**: Advanced search/filtering; interactive maps; image galleries; comparison tools.
+- **Content Management**: Blog; destination guides; travel tips; operator profiles; user-generated content.
+- **Social Proof**: Customer reviews; testimonials; success stories; social media integration.
+
+### User Experience Platform
+- **Registration & Onboarding**: Progressive onboarding; social login; email verification; profile completion.
+- **Tour Booking Flow**: Multi-step forms; real-time availability; dynamic pricing; secure payments.
+- **User Dashboard**: Trip planning; booking management; travel documents; communication center.
+- **Community Features**: Reviews; ratings; photo sharing; travel recommendations; social interactions.
+
+### Business Operations Interface
+- **Operator Portal**: Tour management; availability calendars; pricing controls; booking notifications.
+- **Admin Dashboard**: User management; content moderation; analytics; financial reporting; system monitoring.
+- **Support Center**: Help articles; live chat; ticket system; FAQ management; video tutorials.
+- **Analytics & Reporting**: Business intelligence; performance metrics; conversion tracking; revenue analytics.
+
+## Backend System Integration Patterns
+
+### API Communication Standards
+```typescript
+// Unified API client configuration
+interface TourTripAPIClient {
+  // User Management Service
+  users: {
+    authenticate: (credentials: LoginCredentials) => Promise<AuthResponse>;
+    register: (userData: UserRegistration) => Promise<UserProfile>;
+    getProfile: (userId: string) => Promise<UserProfile>;
+    updateProfile: (userId: string, data: ProfileUpdate) => Promise<UserProfile>;
+  };
+  
+  // Tour Service
+  tours: {
+    search: (params: TourSearchParams) => Promise<TourSearchResult>;
+    getDetails: (tourId: string) => Promise<TourDetails>;
+    getAvailability: (tourId: string, dateRange: DateRange) => Promise<AvailabilityData>;
+    getPricing: (tourId: string, participants: number, date: string) => Promise<PricingData>;
+  };
+  
+  // Booking Service
+  bookings: {
+    create: (bookingData: BookingRequest) => Promise<BookingResponse>;
+    get: (bookingId: string) => Promise<BookingDetails>;
+    update: (bookingId: string, updates: BookingUpdate) => Promise<BookingDetails>;
+    cancel: (bookingId: string, reason: string) => Promise<CancellationResult>;
+    getUserBookings: (userId: string) => Promise<BookingHistory>;
+  };
+  
+  // Payment Service
+  payments: {
+    createPaymentIntent: (amount: number, currency: string) => Promise<PaymentIntent>;
+    processPayment: (paymentData: PaymentRequest) => Promise<PaymentResult>;
+    getPaymentStatus: (paymentId: string) => Promise<PaymentStatus>;
+    initiateRefund: (paymentId: string, amount?: number) => Promise<RefundResult>;
+  };
+  
+  // Location Service
+  locations: {
+    search: (query: string) => Promise<LocationSearchResult>;
+    getDetails: (locationId: string) => Promise<LocationDetails>;
+    getNearbyTours: (coordinates: Coordinates, radius: number) => Promise<Tour[]>;
+    getWeather: (locationId: string) => Promise<WeatherData>;
+  };
+}
+```
+
+### Error Handling & Resilience
+```typescript
+// Unified error handling across all API calls
+class TourTripAPIError extends Error {
+  constructor(
+    public statusCode: number,
+    public errorCode: string,
+    public userMessage: string,
+    public technicalDetails?: any
+  ) {
+    super(userMessage);
+    this.name = 'TourTripAPIError';
+  }
+}
+
+// Circuit breaker pattern for external services
+interface CircuitBreakerConfig {
+  failureThreshold: number;
+  timeout: number;
+  resetTimeout: number;
+  monitoringPeriod: number;
+}
+
+// Retry policy with exponential backoff
+interface RetryPolicy {
+  maxRetries: number;
+  baseDelay: number;
+  maxDelay: number;
+  retryableStatusCodes: number[];
+}
+```
+
+## Website-Specific Security Implementation
+
+### Authentication & Session Management
+- **Multi-Provider Auth**: Email/password; Google; Facebook; Apple; Turkish providers (e-Devlet).
+- **Session Security**: HttpOnly cookies; CSRF protection; session rotation; concurrent session limits.
+- **Role-Based Access**: User; Operator; Admin; Support; Super Admin hierarchies.
+- **Account Security**: Password policies; 2FA for operators; account lockout; suspicious activity detection.
+
+### Payment Security Integration
+- **PCI DSS Compliance**: No card data storage; tokenization; secure transmission; audit logging.
+- **Turkish Payment Integration**: iyzico; Garanti BBVA; İş Bankası; local bank integrations.
+- **International Payments**: Stripe; PayPal; Apple Pay; Google Pay; multi-currency support.
+- **Fraud Prevention**: Velocity checks; geolocation validation; risk scoring; manual review thresholds.
+
+### Data Protection & Privacy
+- **KVKK Compliance**: Turkish data protection law; explicit consent; data localization; breach notification.
+- **GDPR Implementation**: EU user rights; data portability; right to be forgotten; privacy by design.
+- **Cookie Management**: Consent banners; preference centers; analytics opt-out; essential vs optional cookies.
+- **Content Security**: Image virus scanning; user-generated content moderation; XSS prevention; input sanitization.
+
+## Performance & Optimization Strategies
+
+### Website Performance Requirements
+- **Core Web Vitals**: LCP <2.5s; FID <100ms; CLS <0.1; INP <200ms.
+- **Mobile Performance**: 3G network optimization; lazy loading; image compression; critical resource prioritization.
+- **SEO Optimization**: Server-side rendering; meta tags; structured data; sitemap generation; page speed optimization.
+- **Accessibility**: WCAG 2.1 AA compliance; keyboard navigation; screen reader support; color contrast validation.
+
+### Caching & CDN Strategy
+```typescript
+// Multi-level caching for website performance
+interface WebsiteCacheStrategy {
+  // Static assets (long-term caching)
+  staticAssets: {
+    images: '1 year';
+    css: '1 year';
+    js: '1 year';
+    fonts: '1 year';
+  };
+  
+  // Dynamic content caching
+  pages: {
+    homepage: '1 hour';
+    tourPages: '30 minutes';
+    searchResults: '5 minutes';
+    userDashboard: 'no-cache';
+  };
+  
+  // API response caching
+  apiResponses: {
+    tourDetails: '1 hour';
+    locations: '6 hours';
+    availability: '2 minutes';
+    pricing: '1 minute';
+    userProfile: 'session';
+  };
+  
+  // CDN configuration
+  cdn: {
+    provider: 'CloudFront | Cloudflare';
+    regions: ['EU', 'US', 'TR', 'AS'];
+    compressionEnabled: true;
+    httpPushEnabled: true;
+  };
+}
+```
+
+## Real-Time Features Integration
+
+### WebSocket Communication
+- **Live Updates**: Booking status changes; availability updates; payment confirmations; support chat.
+- **Collaborative Features**: Shared trip planning; group bookings; real-time notifications.
+- **Admin Features**: Live user activity; system monitoring; support ticket updates; operator notifications.
+- **Fallback Mechanisms**: Server-sent events; polling; graceful degradation; offline queuing.
+
+### Push Notification System
+```typescript
+// Web push notification integration
+interface WebPushConfig {
+  vapidKeys: {
+    publicKey: string;
+    privateKey: string;
+  };
+  notificationTypes: {
+    bookingConfirmation: {
+      title: string;
+      body: string;
+      icon: string;
+      badge: string;
+      actions: NotificationAction[];
+    };
+    paymentReminder: NotificationTemplate;
+    tripReminder: NotificationTemplate;
+    weatherAlert: NotificationTemplate;
+    emergency: NotificationTemplate;
+  };
+  deliveryStrategy: {
+    immediate: string[];
+    scheduled: string[];
+    batched: string[];
+  };
+}
+```
+
+## Testing Strategy for Website
+
+### Comprehensive Testing Framework
+- **Unit Testing**: Vitest for utilities; Testing Library for components; MSW for API mocking.
+- **Integration Testing**: API integration; form submission; payment flows; authentication journeys.
+- **E2E Testing**: Playwright for critical paths; cross-browser testing; mobile responsiveness.
+- **Performance Testing**: Lighthouse CI; load testing; stress testing; synthetic monitoring.
+
+### Travel-Specific Test Scenarios
+```gherkin
+Feature: Cross-Device Booking Continuation
+  Scenario: User starts booking on mobile, completes on desktop
+    Given I start a tour booking on my mobile device
+    When I save my progress and switch to desktop
+    Then I should be able to continue from where I left off
+    And all form data should be preserved
+    And payment should process correctly
+
+Feature: Multi-Currency Display and Payment
+  Scenario: German user books Turkish tour
+    Given I am browsing from Germany
+    And my browser locale is set to German
+    When I view a tour priced in Turkish Lira
+    Then I should see prices in EUR with conversion rates
+    And I should be able to pay in EUR
+    And the tour operator should receive payment in TRY
+
+Feature: Offline Booking Form Persistence
+  Scenario: Network interruption during booking
+    Given I am filling out a booking form
+    When my internet connection is lost
+    And I continue filling the form
+    And my connection is restored
+    Then my form data should be preserved
+    And I should be able to complete the booking
+```
+
+## Content Management & Localization
+
+### Multi-Language Content Strategy
+- **Primary Languages**: Turkish (TR); English (EN); German (DE); Russian (RU); Arabic (AR).
+- **Content Translation**: Professional translation services; context-aware translations; cultural adaptation.
+- **URL Localization**: Subdirectory approach (/tr/, /en/, /de/); hreflang implementation; canonical URLs.
+- **Currency & Formatting**: Local number formats; date formats; currency symbols; tax calculations.
+
+### SEO & Content Strategy
+```typescript
+// SEO optimization configuration
+interface SEOConfig {
+  metaTags: {
+    title: string;
+    description: string;
+    keywords: string[];
+    openGraph: OpenGraphData;
+    twitterCard: TwitterCardData;
+  };
+  
+  structuredData: {
+    organization: Organization;
+    website: WebSite;
+    breadcrumb: BreadcrumbList;
+    tour: TourStructuredData;
+    review: ReviewStructuredData;
+  };
+  
+  sitemap: {
+    staticPages: string[];
+    dynamicPages: {
+      tours: TourSitemapConfig;
+      locations: LocationSitemapConfig;
+      blog: BlogSitemapConfig;
+    };
+    updateFrequency: 'daily' | 'weekly' | 'monthly';
+  };
+}
+```
+
+## Analytics & Business Intelligence
+
+### Tracking & Measurement
+- **Web Analytics**: Google Analytics 4; custom events; conversion tracking; user behavior analysis.
+- **Business Metrics**: Booking conversion rates; revenue per visitor; customer lifetime value; operator performance.
+- **Performance Monitoring**: Real User Monitoring; synthetic monitoring; error tracking; uptime monitoring.
+- **A/B Testing**: Feature flags; experiment management; statistical significance; automated rollouts.
+
+### Privacy-Compliant Analytics
+```typescript
+// Privacy-first analytics implementation
+interface AnalyticsConfig {
+  consentManagement: {
+    required: boolean;
+    categories: ['essential', 'analytics', 'marketing', 'personalization'];
+    granularControl: boolean;
+    cookielessTracking: boolean;
+  };
+  
+  dataProcessing: {
+    anonymization: boolean;
+    ipMasking: boolean;
+    dataRetention: '26 months';
+    crossBorderTransfer: boolean;
+  };
+  
+  userRights: {
+    dataExport: boolean;
+    dataDeletion: boolean;
+    consentWithdrawal: boolean;
+    accessRequest: boolean;
+  };
+}
+```
+
+## Self-Check Protocol (Website)
+
+Before deploying any website feature:
+- [ ] **Cross-Browser Compatibility**: Chrome, Firefox, Safari, Edge tested across devices
+- [ ] **Mobile Responsiveness**: All breakpoints tested; touch interactions optimized
+- [ ] **Performance Benchmarks**: Lighthouse scores ≥90; Core Web Vitals met
+- [ ] **Accessibility Validation**: WCAG 2.1 AA compliance; screen reader testing
+- [ ] **SEO Optimization**: Meta tags complete; structured data valid; sitemap updated
+- [ ] **Security Headers**: CSP configured; security headers implemented; vulnerability scanning passed
+- [ ] **API Integration**: Error handling tested; loading states implemented; offline fallbacks ready
+- [ ] **Analytics Tracking**: Events configured; privacy compliance verified; data accuracy validated
+- [ ] **Localization**: All content translated; cultural adaptations implemented; currency formatting correct
+- [ ] **Backend Compatibility**: API contracts respected; data models aligned; error codes consistent
+
+## Website Quality Blocks
+
+PREVENT deployment when:
+- ❌ **Performance Degradation**: Core Web Vitals scores below thresholds
+- ❌ **Accessibility Violations**: WCAG compliance failures; keyboard navigation issues
+- ❌ **Security Vulnerabilities**: XSS risks; CSRF protection missing; insecure data handling
+- ❌ **SEO Regressions**: Missing meta tags; broken structured data; indexing issues
+- ❌ **API Inconsistencies**: Breaking changes without versioning; error handling gaps
+- ❌ **Mobile UX Issues**: Touch targets too small; content overflow; navigation problems
+- ❌ **Localization Gaps**: Untranslated content; broken currency formatting; cultural insensitivity
+- ❌ **Analytics Failures**: Tracking events broken; privacy compliance issues; data collection errors
+
+## Integration Testing with Backend Services
+
+### API Contract Testing
+- **Schema Validation**: Request/response schemas match backend specifications
+- **Error Handling**: Consistent error codes and messages across all services
+- **Rate Limiting**: Proper handling of rate limit responses and retry logic
+- **Authentication**: Token validation and refresh mechanisms working correctly
+
+### Data Consistency Checks
+- **User Profiles**: Website profile updates sync with mobile app data
+- **Booking Data**: Booking status consistency across web and mobile platforms
+- **Payment Information**: Payment status updates reflected in all user interfaces
+- **Search Results**: Tour availability and pricing consistent across all platforms

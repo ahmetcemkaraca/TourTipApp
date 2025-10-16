@@ -1,0 +1,80 @@
+---
+description: Android Kotlin development standards for TourTrip.app - native UI with KMM integration.
+globs: "androidApp/**/*.kt,**/androidMain/**/*.kt"
+alwaysApply: false
+---
+
+As an Android Kotlin developer in TourTrip.app:
+
+## Core Standards
+- **UI**: Jetpack Compose + Material 3; dynamic color theming; MotionLayout/Compose animations for 60fps.
+- **Architecture**: MVVM + Repository pattern; Hilt DI; Room + DataStore; coroutines + Flow for reactive programming.
+- **KMM Integration**: Use shared business logic from commonMain; keep platform-specific UI and system integrations in androidMain.
+- **Networking**: Ktor client (shared) or Retrofit; OkHttp interceptors; timeout/retry/circuit breaker; TLS pinning for production.
+
+## TourTrip.app Specifics
+- **Offline-First**: Critical for travel scenarios; SQLDelight sync with server; offline maps caching.
+- **Location Services**: FusedLocationProvider; background location with proper user consent; geofencing for tour alerts.
+- **Maps Integration**: Google Maps/Mapbox; offline tile caching; route optimization; POI markers.
+- **Payment Integration**: Google Pay; biometric authentication; secure card tokenization.
+- **Push Notifications**: Firebase Cloud Messaging; travel updates; booking confirmations; emergency alerts.
+
+## Security & Privacy
+- **Data Protection**: EncryptedSharedPreferences for tokens; Android Keystore for payment data; no PII in logs.
+- **Network Security**: Certificate pinning; network security config; API key obfuscation.
+- **Permissions**: Runtime permissions with clear user-facing explanations; location accuracy options.
+- **Authentication**: Biometric prompt API; session management; automatic logout on sensitive screens.
+
+## Performance & Quality
+- **Strict Mode**: Enable in debug builds; monitor main thread violations; database/network on background threads.
+- **Memory**: Use Leak Canary; optimize image loading with Coil; lazy loading for large lists.
+- **Background Work**: WorkManager for sync; foreground services for active trips; respect battery optimization.
+- **Testing**: JUnit + MockK + Turbine for coroutines; Compose UI tests; baseline profiles for startup optimization.
+
+## Build & CI/CD
+- **Gradle**: Kotlin DSL; version catalogs; build types (debug/release/staging); signing configs external.
+- **Code Quality**: ktlint + detekt; SonarQube analysis; dependency vulnerability scanning.
+- **Release**: Automated builds; Play Console integration; gradual rollout strategy.
+
+## Self-Check Protocol (Android)
+Before submitting code:
+- [ ] Compose previews render correctly across themes (light/dark/dynamic)
+- [ ] No blocking operations on main thread (StrictMode validation)
+- [ ] Hilt dependency graph validates without circular dependencies
+- [ ] Room database migrations tested with instrumented tests
+- [ ] Permissions requested with user-friendly rationale
+- [ ] Offline functionality tested in airplane mode
+- [ ] Memory leaks checked with LeakCanary
+- [ ] APK size within budget (<50MB for main app)
+
+## Soft Blocks (Android)
+REJECT these patterns and suggest alternatives:
+- ❌ Requesting location/camera permissions without clear user benefit explanation
+- ❌ Storing payment tokens in SharedPreferences (use Keystore instead)
+- ❌ Hardcoding API endpoints or keys in code (use BuildConfig or remote config)
+- ❌ Creating fragments for new features (prefer Compose-first approach)
+- ❌ Using deprecated APIs without migration plan
+- ❌ Background location without foreground service and notification
+
+## Error Handling Patterns
+```kotlin
+// Preferred: Sealed classes for result states
+sealed class TourResult {
+    data class Success(val tours: List<Tour>) : TourResult()
+    data class Error(val exception: TourException) : TourResult()
+    object Loading : TourResult()
+}
+
+// Required: Structured logging
+Log.d("TourRepository", "Fetching tours", mapOf(
+    "userId" to userId.masked(),
+    "location" to location.toString(),
+    "requestId" to requestId
+))
+```
+
+## Dependencies Management
+- Use version catalogs for consistency across modules
+- Prefer Jetpack libraries over third-party when available
+- Keep KMM dependencies in commonMain; Android-specific in androidMain
+- Regular dependency updates with automated security scanning

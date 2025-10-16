@@ -1,0 +1,29 @@
+{
+  "projects": {
+    "default": "tourtrip-prod",
+    "staging": "tourtrip-staging",
+    "development": "tourtrip-dev"
+  },
+  "targets": {
+    "tourtrip-prod": {
+      "hosting": {
+        "website": ["tourtrip-app"],
+        "admin": ["tourtrip-admin"]
+      }
+    },
+    "tourtrip-staging": {
+      "hosting": {
+        "website": ["tourtrip-staging"],
+        "admin": ["tourtrip-admin-staging"]
+      }
+    },
+    "tourtrip-dev": {
+      "hosting": {
+        "website": ["tourtrip-dev"],
+        "admin": ["tourtrip-admin-dev"]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}

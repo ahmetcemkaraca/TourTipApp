@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TourTrip - Çevrimdışı</title>
+  <meta name="description" content="TourTrip şu anda çevrimdışı. Lütfen internet bağlantınızı kontrol edin.">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .offline-container {
+      text-align: center;
+      max-width: 500px;
+      padding: 40px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+    }
+
+    .offline-icon {
+      font-size: 4rem;
+      margin-bottom: 20px;
+      opacity: 0.8;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .features {
+      text-align: left;
+      margin: 30px 0;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .features h3 {
+      font-size: 1.2rem;
+      margin-bottom: 15px;
+      font-weight: 600;
+    }
+
+    .features ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .features li {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+    }
+
+    .features li:last-child {
+      border-bottom: none;
+    }
+
+    .features li::before {
+      content: '✓';
+      color: #4ade80;
+      font-weight: bold;
+      margin-right: 12px;
+      font-size: 1.1rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 30px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .btn-primary {
+      background: #3B82F6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+
+    .status {
+      margin-top: 20px;
+      padding: 12px;
+      border-radius: 8px;
+      background: rgba(251, 191, 36, 0.2);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      font-size: 0.9rem;
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.7;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .offline-container {
+        padding: 20px;
+        margin: 10px;
+      }
+
+      h1 {
+        font-size: 1.5rem;
+      }
+
+      .offline-icon {
+        font-size: 3rem;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon pulse">
+      📱
+    </div>
+
+    <h1>Çevrimdışı Mod</h1>
+
+    <p>
+      TourTrip şu anda çevrimdışı çalışıyor. İnternet bağlantınız olmadığında bile birçok özelliği kullanabilirsiniz.
+    </p>
+
+    <div class="features">
+      <h3>Çevrimdışı Özellikler</h3>
+      <ul>
+        <li>Kaydedilmiş turlarınızı görüntüleyin</li>
+        <li>Rezervasyon geçmişinizi inceleyin</li>
+        <li>Kaydedilmiş rotalarınızı görün</li>
+        <li>Önceden indirilmiş haritaları kullanın</li>
+        <li>Kaydedilmiş mesajlarınızı okuyun</li>
+      </ul>
+    </div>
+
+    <div class="status">
+      <strong>İpucu:</strong> İnternet bağlantınız geri geldiğinde verileriniz otomatik olarak senkronize edilecektir.
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="window.location.reload()">
+        Yeniden Dene
+      </button>
+
+      <button class="btn btn-secondary" onclick="window.history.back()">
+        Geri Dön
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Check network status
+    function updateOnlineStatus() {
+      const statusElement = document.querySelector('.status');
+
+      if (navigator.onLine) {
+        statusElement.innerHTML = '<strong>✓</strong> İnternet bağlantısı geri geldi! Sayfa otomatik olarak yenilenecek...';
+        statusElement.style.background = 'rgba(74, 222, 128, 0.2)';
+        statusElement.style.borderColor = 'rgba(74, 222, 128, 0.3)';
+
+        // Auto reload after 3 seconds
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+      } else {
+        statusElement.innerHTML = '<strong>İpucu:</strong> İnternet bağlantınız olmadığında bile birçok özelliği kullanabilirsiniz.';
+        statusElement.style.background = 'rgba(251, 191, 36, 0.2)';
+        statusElement.style.borderColor = 'rgba(251, 191, 36, 0.3)';
+      }
+    }
+
+    // Listen for online/offline events
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    // Initial check
+    updateOnlineStatus();
+
+    // Service Worker registration status
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(() => {
+        console.log('Service Worker ready for offline functionality');
+      });
+    }
+  </script>
+</body>
+</html>

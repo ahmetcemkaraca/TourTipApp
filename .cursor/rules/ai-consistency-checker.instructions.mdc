@@ -1,0 +1,162 @@
+---
+description: AI self-consistency checker and validation protocol for TourTrip.app development.
+alwaysApply: true
+globs: "**/*"
+---
+
+# AI Consistency Checker & Validation Protocol
+
+## Pre-Implementation Validation
+
+Before writing any code, AI must verify:
+
+### Technical Feasibility Check
+- [ ] **File Paths**: All referenced files and directories exist or are valid to create
+- [ ] **Dependencies**: Required packages/modules are available in the technology stack
+- [ ] **Imports**: All import statements can be resolved within the project structure
+- [ ] **Build System**: Changes are compatible with existing Gradle/NPM/Xcode configurations
+
+### Architecture Alignment Check
+- [ ] **Service Boundaries**: Changes respect microservice boundaries defined in design.md
+- [ ] **Data Models**: New entities align with existing schema and domain models
+- [ ] **API Contracts**: Endpoint changes maintain backward compatibility or include versioning
+- [ ] **Platform Patterns**: KMM shared logic vs platform-specific implementations correctly separated
+
+### Security Compliance Check
+- [ ] **Secret Management**: No credentials, API keys, or sensitive data in code
+- [ ] **Input Validation**: All user inputs validated with appropriate schemas (Zod/TypeBox)
+- [ ] **Output Encoding**: User-generated content properly escaped/sanitized
+- [ ] **Authentication**: Protected endpoints have proper auth middleware
+- [ ] **PII Handling**: Personally identifiable information properly masked in logs
+
+## Cross-Platform Consistency Validation
+
+### KMM Boundary Enforcement
+- [ ] **Shared Logic**: Business rules implemented in commonMain, not duplicated per platform
+- [ ] **Platform UI**: Native UI patterns respected (Compose for Android, SwiftUI for iOS)
+- [ ] **Data Flow**: Consistent ViewModel/Repository patterns across platforms
+- [ ] **Error Handling**: Common error types defined in shared code
+
+### API Consistency
+- [ ] **Response Schemas**: Same data structure across web and mobile clients
+- [ ] **Error Formats**: RFC 7807 problem+json format for all error responses
+- [ ] **Status Codes**: Semantic HTTP status codes consistently applied
+- [ ] **Versioning**: API version strategy followed for breaking changes
+
+### UI/UX Consistency
+- [ ] **Design Tokens**: Colors, spacing, typography consistent across platforms
+- [ ] **Interaction Patterns**: Similar user flows across web and mobile
+- [ ] **Loading States**: Consistent loading, empty, and error state handling
+- [ ] **Accessibility**: WCAG compliance across all platforms
+
+## Code Quality Self-Check
+
+### Naming Conventions
+- [ ] **Variables**: camelCase for JS/TS/Kotlin, PascalCase for classes, snake_case for database
+- [ ] **Functions**: Verb-noun patterns, clear intent (getUserTours, not getTours)
+- [ ] **Components**: PascalCase, descriptive names (TourBookingForm, not Form)
+- [ ] **Files**: kebab-case for web, PascalCase for mobile components
+
+### Error Handling Patterns
+- [ ] **Typed Errors**: Custom error classes with proper inheritance
+- [ ] **Graceful Degradation**: Fallback UI for error states
+- [ ] **Logging**: Structured logs with correlation IDs, no PII exposure
+- [ ] **User Feedback**: Meaningful error messages for user-facing issues
+
+### Performance Considerations
+- [ ] **Database Queries**: No N+1 problems, proper indexing strategy
+- [ ] **Mobile Performance**: No blocking operations on main thread
+- [ ] **Web Performance**: Bundle size impact, lazy loading where appropriate
+- [ ] **Caching**: Appropriate cache strategies for data freshness
+
+## Domain-Specific Validations
+
+### TourTrip.app Business Rules
+- [ ] **Booking Integrity**: Availability checking, double-booking prevention
+- [ ] **Payment Security**: Idempotency keys, secure token handling
+- [ ] **Location Services**: Proper permission handling, offline map support
+- [ ] **Multi-currency**: Currency conversion, localized formatting
+
+### Travel Industry Standards
+- [ ] **Data Privacy**: GDPR/KVKK compliance for travel data
+- [ ] **Payment Processing**: PCI-DSS requirements for card data
+- [ ] **Accessibility**: Travel accessibility requirements consideration
+- [ ] **Offline Support**: Critical for travel scenarios, proper sync strategies
+
+## Conflict Detection & Resolution
+
+### User Input Conflicts
+When user requests conflict with established patterns:
+
+1. **Identify the Conflict**: Clearly state what conflicts with what
+2. **Explain Impact**: Security, performance, or architectural implications
+3. **Propose Alternatives**: 2-3 viable options with trade-offs
+4. **Recommend Solution**: Best practice approach with justification
+
+Example Response Pattern:
+```
+❌ Çelişki Tespit Edildi: İstenen değişiklik [X] mevcut güvenlik politikası [Y] ile çelişiyor.
+
+💡 Önerilen Alternatifler:
+1. [Güvenli alternatif 1] - Artısı: [A], Eksisi: [B]
+2. [Güvenli alternatif 2] - Artısı: [C], Eksisi: [D]
+3. [Kompromis çözüm] - Artısı: [E], Eksisi: [F]
+
+✅ Önerilen Yaklaşım: [Seçilen alternatif] çünkü [justification]
+```
+
+### Priority Hierarchy for Conflicts
+1. **Security & Compliance** (Non-negotiable)
+2. **Project Architecture Rules** (project.instructions.mdc)
+3. **Platform Best Practices** (role-specific .mdc files)
+4. **User Preferences** (current session context)
+5. **Default Conventions** (language/framework defaults)
+
+## Implementation Verification
+
+### Before Marking Tasks Complete
+- [ ] **Code Compiles**: No syntax errors, all imports resolve
+- [ ] **Tests Pass**: Unit tests written and passing
+- [ ] **Lint Clean**: No linting errors or warnings
+- [ ] **Type Safety**: No TypeScript/Kotlin type errors
+- [ ] **Security Scan**: No secrets detected, dependencies secure
+
+### Documentation Updates
+- [ ] **Trio Files**: requirements.md, design.md, tasks.md updated as needed
+- [ ] **README**: Setup/run instructions updated if needed
+- [ ] **CHANGELOG**: User-facing changes documented
+- [ ] **API Docs**: OpenAPI/schema updates for endpoint changes
+
+## AI Self-Assessment Questions
+
+Before completing any implementation:
+
+1. **"Does this change maintain consistency across all platforms?"**
+2. **"Are there any security implications I haven't addressed?"**
+3. **"Will this scale with the expected user load?"**
+4. **"Have I considered offline/error scenarios?"**
+5. **"Is the user experience consistent with existing patterns?"**
+6. **"Are all dependencies properly managed and secure?"**
+7. **"Does this follow TourTrip.app domain best practices?"**
+8. **"Are there any performance implications for mobile users?"**
+
+## Emergency Stop Conditions
+
+AI MUST stop and ask for clarification when:
+- User requests bypassing security validations
+- Changes would break existing API contracts without versioning
+- Implementation requires access to production systems or real payment data
+- Architectural changes conflict with established microservice boundaries
+- Changes would violate data privacy regulations (GDPR/KVKK)
+
+## Quality Gate Enforcement
+
+Every code change must pass:
+1. **Compile Check**: Code builds successfully
+2. **Test Check**: Tests pass, coverage maintained
+3. **Security Check**: No secrets, proper validation
+4. **Performance Check**: Within established budgets
+5. **Consistency Check**: Follows established patterns
+6. **Documentation Check**: Trio files and docs updated
+
+Only proceed to the next task when ALL checks pass.

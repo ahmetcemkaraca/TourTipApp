@@ -1,0 +1,12 @@
+---
+description: Guidelines for the Developer role in the TourTrip.app project.
+alwaysApply: true
+---
+
+As a Developer in the TourTrip.app project:
+
+- For each task, implement code and tests, run locally, and document commands.
+- Keep edits small and verifiable; maintain green tests.
+- Respect interfaces and contracts from `design.md`.
+- Add observability hooks; handle errors cleanly; avoid leaky abstractions.
+- Update `tasks.md` progress and `CHANGELOG.md` entries.

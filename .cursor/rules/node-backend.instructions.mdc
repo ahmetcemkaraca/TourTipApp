@@ -1,0 +1,124 @@
+---
+description: Node.js Backend development standards for TourTrip.app microservices architecture.
+alwaysApply: false
+globs: "backend/**/*.{ts,js},server/**/*.{ts,js},api/**/*.{ts,js},services/**/*.{ts,js}"
+---
+
+As a Node.js Backend developer in TourTrip.app:
+
+## Core Standards
+- **Framework**: Fastify (performance) or NestJS (enterprise structure); ESM + TypeScript strict mode.
+- **Validation**: Zod/TypeBox schemas; fastify-type-provider for type safety; centralized schema registry.
+- **Security**: helmet, CORS allowlist, rate limiting, CSRF tokens; secret scanning in CI.
+- **Error Handling**: Typed error classes; RFC 7807 problem+json responses; no stack traces in production.
+
+## TourTrip.app Microservices
+- **Service Boundaries**: Users, Tours, Bookings, Payments, Notifications, Reviews, Location Services.
+- **API Gateway**: Single entry point; authentication/authorization; request routing; rate limiting.
+- **Service Communication**: HTTP for synchronous; message queues (Redis/RabbitMQ) for async events.
+- **Data Consistency**: Event sourcing for critical operations; saga pattern for distributed transactions.
+
+## Authentication & Authorization
+- **Session Management**: HttpOnly/SameSite cookies; Redis session store; automatic expiration.
+- **JWT Strategy**: Short-lived access tokens; refresh token rotation; revocation list.
+- **RBAC/ABAC**: Role-based + attribute-based access control; policy as code.
+- **API Security**: API keys for external integrations; OAuth2 for third-party services.
+
+## Database & Persistence
+- **Primary**: PostgreSQL with Drizzle ORM; connection pooling; read replicas for scaling.
+- **Cache**: Redis for sessions, API responses, frequently accessed data.
+- **Search**: Elasticsearch for tour discovery; geospatial queries; full-text search.
+- **Files**: S3-compatible storage; CDN for images; signed URLs for uploads.
+
+## TourTrip.app Domain Logic
+- **Booking Engine**: Availability checking; price calculation; inventory management; concurrency handling.
+- **Payment Processing**: Multi-currency support; payment provider abstraction; idempotent operations.
+- **Geospatial**: PostGIS for location queries; route optimization; distance calculations.
+- **Real-time Updates**: WebSockets for live updates; push notifications; event streaming.
+
+## Observability & Monitoring
+- **Structured Logging**: Pino with correlation IDs; PII redaction; log aggregation.
+- **Metrics**: Prometheus metrics; custom business metrics; SLA monitoring.
+- **Tracing**: OpenTelemetry for distributed tracing; performance bottleneck identification.
+- **Health Checks**: /health and /ready endpoints; dependency health validation.
+
+## Performance & Scalability
+- **Async Patterns**: Avoid blocking operations; use worker threads for CPU-intensive tasks.
+- **Caching Strategy**: Multi-level caching; cache invalidation; TTL optimization.
+- **Database Optimization**: Query optimization; indexing strategy; connection pooling.
+- **Load Balancing**: Horizontal scaling; session affinity where needed.
+
+## Testing Strategy
+- **Unit Tests**: Vitest; mock external dependencies; business logic coverage.
+- **Integration Tests**: Supertest for API testing; database seeding; transaction rollback.
+- **Contract Tests**: Pact for microservice contracts; schema compatibility testing.
+- **Load Testing**: Artillery/K6 for performance validation; capacity planning.
+
+## Self-Check Protocol (Backend)
+Before deploying:
+- [ ] All endpoints documented with OpenAPI/Swagger; examples provided
+- [ ] Input validation covers edge cases; error responses tested
+- [ ] Database queries optimized; no N+1 problems detected
+- [ ] Rate limiting configured for public endpoints
+- [ ] Secrets properly externalized; no hardcoded credentials
+- [ ] Idempotency keys implemented for write operations
+- [ ] Circuit breakers configured for external service calls
+- [ ] Audit logging in place for sensitive operations
+
+## Soft Blocks (Backend)
+REJECT these patterns and suggest secure alternatives:
+- ❌ Unauthenticated endpoints for data modification
+- ❌ SQL queries without parameterization (SQL injection risk)
+- ❌ Storing passwords in plain text or weak hashing
+- ❌ Missing rate limiting on public API endpoints
+- ❌ Returning detailed error messages to clients in production
+- ❌ Synchronous processing for long-running operations
+
+## API Design Patterns
+```typescript
+// Preferred: Typed request/response with validation
+import { z } from 'zod';
+
+const BookingRequestSchema = z.object({
+  tourId: z.string().uuid(),
+  participants: z.number().min(1).max(10),
+  selectedDate: z.string().datetime(),
+  paymentMethodId: z.string().optional()
+});
+
+type BookingRequest = z.infer<typeof BookingRequestSchema>;
+
+// Idempotent booking endpoint
+app.post<{
+  Body: BookingRequest;
+  Reply: BookingResponse | ProblemDetails;
+}>('/api/v1/bookings', {
+  schema: {
+    body: BookingRequestSchema,
+    response: {
+      201: BookingResponseSchema,
+      400: ProblemDetailsSchema,
+      409: ProblemDetailsSchema
+    }
+  },
+  preHandler: [authenticate, rateLimit({ max: 10, timeWindow: '1 minute' })]
+}, async (request, reply) => {
+  const idempotencyKey = request.headers['idempotency-key'];
+  if (!idempotencyKey) {
+    return reply.code(400).send({
+      type: 'about:blank',
+      title: 'Missing Idempotency Key',
+      status: 400,
+      detail: 'Idempotency-Key header is required for booking operations'
+    });
+  }
+
+  // Implementation with proper error handling
+});
+```
+
+## Environment Configuration
+- **Development**: Docker Compose; hot reload; debug logging; test databases.
+- **Staging**: Production-like environment; anonymized data; performance testing.
+- **Production**: Container orchestration; blue-green deployment; monitoring; backup strategies.
+- **Secrets Management**: AWS Secrets Manager/HashiCorp Vault; rotation policies; audit trails.

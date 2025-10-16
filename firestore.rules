@@ -1,0 +1,200 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for authentication and authorization
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    function isProvider() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['provider', 'admin'];
+    }
+    
+    function isModerator() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['moderator', 'admin'];
+    }
+    
+    function isValidEmail(email) {
+      return email.matches('.*@.*\\..*');
+    }
+    
+    function isValidString(value, minLength, maxLength) {
+      return value is string && 
+             value.size() >= minLength && 
+             value.size() <= maxLength;
+    }
+    
+    function isValidNumber(value, min, max) {
+      return value is number && value >= min && value <= max;
+    }
+    
+    function hasValidTimestamp(data, field) {
+      return field in data && data[field] is timestamp;
+    }
+    
+    function isRecentTimestamp(timestamp) {
+      return timestamp > request.time - duration.value(1, 'h') && 
+             timestamp <= request.time + duration.value(5, 'm');
+    }
+
+    // Users collection - Profile data
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update: if isAuthenticated() && isOwner(userId);
+      allow delete: if isAdmin() || isOwner(userId);
+    }
+
+    // Tours collection
+    match /tours/{tourId} {
+      allow read: if true; // Public read access
+      allow create: if isProvider();
+      allow update: if isProvider() && (isOwner(resource.data.providerId) || isAdmin());
+      allow delete: if isAdmin() || (isProvider() && isOwner(resource.data.providerId));
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.userId) || 
+        isOwner(resource.data.providerId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.userId) ||
+        isOwner(resource.data.providerId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      allow read: if true; // Public read
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update: if isAuthenticated() && isOwner(resource.data.userId);
+      allow delete: if isAdmin() || (isAuthenticated() && isOwner(resource.data.userId));
+    }
+
+    // Marketplace - Restaurants
+    match /restaurants/{restaurantId} {
+      allow read: if true; // Public read
+      allow create: if isProvider();
+      allow update: if isProvider() && (isOwner(resource.data.ownerId) || isAdmin());
+      allow delete: if isAdmin() || (isProvider() && isOwner(resource.data.ownerId));
+    }
+
+    // Marketplace - Shops
+    match /shops/{shopId} {
+      allow read: if true; // Public read
+      allow create: if isProvider();
+      allow update: if isProvider() && (isOwner(resource.data.ownerId) || isAdmin());
+      allow delete: if isAdmin() || (isProvider() && isOwner(resource.data.ownerId));
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        isOwner(resource.data.customerId) || 
+        isOwner(resource.data.vendorId) || 
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && isOwner(request.resource.data.customerId);
+      allow update: if isAuthenticated() && (
+        isOwner(resource.data.customerId) ||
+        isOwner(resource.data.vendorId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Loyalty Program - Read only for users, managed by Cloud Functions
+    match /loyaltyAccounts/{accountId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create, update, delete: if false; // Managed by Cloud Functions only
+    }
+
+    match /pointsTransactions/{transactionId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create, update, delete: if false; // Managed by Cloud Functions only
+    }
+
+    match /rewards/{rewardId} {
+      allow read: if true; // Public read for catalog
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /rewardRedemptions/{redemptionId} {
+      allow read: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
+      allow create: if isAuthenticated() && isOwner(request.resource.data.userId);
+      allow update, delete: if false; // Managed by Cloud Functions only
+    }
+
+    // CMS Collections
+    match /contentPages/{pageId} {
+      allow read: if resource.data.status == 'published' || isAdmin() || isModerator();
+      allow create, update: if isModerator();
+      allow delete: if isAdmin();
+    }
+
+    match /contentCategories/{categoryId} {
+      allow read: if resource.data.isActive || isAdmin() || isModerator();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /mediaLibrary/{mediaId} {
+      allow read: if resource.data.isPublic || isAdmin() || isModerator();
+      allow create: if isModerator();
+      allow update: if isModerator() && (isOwner(resource.data.uploadedBy) || isAdmin());
+      allow delete: if isAdmin() || (isModerator() && isOwner(resource.data.uploadedBy));
+    }
+
+    match /faqs/{faqId} {
+      allow read: if resource.data.isActive || isAdmin() || isModerator();
+      allow create, update: if isModerator();
+      allow delete: if isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if resource.data.isActive || isAdmin() || isModerator();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Admin-only collections
+    match /adminLogs/{logId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Managed by system only
+    }
+
+    match /auditTrails/{trailId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Managed by system only
+    }
+
+    match /securityIncidents/{incidentId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Managed by security system only
+    }
+
+    // Default deny all other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

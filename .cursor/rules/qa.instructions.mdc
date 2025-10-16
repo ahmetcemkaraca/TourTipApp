@@ -1,0 +1,143 @@
+---
+description: Quality Assurance engineering standards for TourTrip.app - comprehensive testing strategy and quality gates.
+alwaysApply: false
+globs: "**/*{test,spec,cy,feature}*.*,**/tests/**/*,**/cypress/**/*,**/playwright/**/*"
+---
+
+As QA engineer in TourTrip.app:
+
+## Testing Strategy & Test Pyramid
+
+### Unit Testing (70% of test effort)
+- **Backend**: Vitest for Node.js services; mock external dependencies; business logic coverage.
+- **Mobile (Android)**: JUnit + MockK; Robolectric for Android-specific tests; Turbine for coroutines.
+- **Mobile (iOS)**: XCTest + async/await; mock external services; Swift testing best practices.
+- **Web Frontend**: Vitest + Testing Library; component testing; custom hook testing.
+
+### Integration Testing (20% of test effort)
+- **API Integration**: Supertest for REST APIs; contract testing with Pact; database integration.
+- **Database Testing**: Test migrations; data integrity; performance under load; connection pooling.
+- **External Services**: Mock external APIs; test error scenarios; timeout handling.
+- **Cross-Platform**: KMM shared logic testing; platform-specific behavior validation.
+
+### End-to-End Testing (10% of test effort)
+- **Critical User Journeys**: Registration → Search → Booking → Payment → Trip Management.
+- **Cross-Browser**: Playwright for web; device farms for mobile; responsive design validation.
+- **Performance Testing**: Load testing with K6/Artillery; stress testing; endurance testing.
+- **Security Testing**: OWASP ZAP integration; penetration testing; vulnerability scanning.
+
+## TourTrip.app Specific Test Scenarios
+
+### Travel Booking Flow Testing
+- **Search & Discovery**: Location search; date picker; availability checking; pricing display.
+- **Booking Process**: Multi-step forms; payment integration; confirmation emails; booking modifications.
+- **Payment Testing**: Multiple payment methods; currency conversion; refund processing; fraud detection.
+- **User Management**: Registration; authentication; profile management; travel history.
+
+### Mobile App Testing
+- **Offline Scenarios**: Network loss during booking; offline map access; data synchronization.
+- **Location Services**: GPS accuracy; geofencing; background location; permission handling.
+- **Push Notifications**: Booking confirmations; travel updates; emergency alerts; timing accuracy.
+- **Device Compatibility**: Multiple screen sizes; OS versions; hardware capabilities.
+
+### Performance & Scalability Testing
+- **Load Testing**: Concurrent users; peak booking periods; database performance.
+- **Mobile Performance**: App startup time; memory usage; battery consumption; data usage.
+- **API Performance**: Response times; throughput; rate limiting; circuit breaker testing.
+- **Database Performance**: Query optimization; index usage; connection pooling; backup/restore.
+
+## Test Data Management
+- **Fixtures**: Deterministic test data; realistic but anonymized; version controlled.
+- **Test Environments**: Isolated data per environment; automated data refresh; sensitive data protection.
+- **Data Privacy**: No production data in testing; GDPR/KVKK compliance; data anonymization.
+- **Seeding**: Automated test data generation; consistent state setup; cleanup procedures.
+
+## Test Automation Framework
+- **CI/CD Integration**: Tests run on every commit; parallel execution; fast feedback loops.
+- **Test Reporting**: Coverage reports; test results dashboard; flaky test identification.
+- **Test Maintenance**: Regular test review; outdated test removal; test code quality.
+- **Cross-Platform Testing**: Shared test scenarios; platform-specific validations; consistency checks.
+
+## Quality Gates & Metrics
+- **Coverage Targets**: Unit tests ≥80%; integration tests ≥60%; E2E critical paths 100%.
+- **Performance SLAs**: API response <200ms; mobile app start <3s; web LCP <2.5s.
+- **Reliability Metrics**: Test flakiness <5%; build success rate ≥95%; deployment success ≥98%.
+- **Security Testing**: OWASP Top 10 coverage; dependency vulnerability scanning; SAST/DAST integration.
+
+## Self-Check Protocol (QA)
+Before approving any release:
+- [ ] All critical user journeys tested and passing
+- [ ] Performance benchmarks met across all platforms
+- [ ] Security tests passed with no high/critical vulnerabilities
+- [ ] Cross-platform consistency validated
+- [ ] Accessibility testing completed (WCAG 2.1 AA)
+- [ ] Test coverage targets achieved
+- [ ] No flaky tests in critical path
+- [ ] Test environment matches production configuration
+
+## Quality Blocks (QA)
+PREVENT release when:
+- ❌ Critical or high-severity bugs remain unresolved
+- ❌ Test coverage drops below established thresholds
+- ❌ Performance degrades beyond acceptable limits
+- ❌ Security vulnerabilities remain unpatched
+- ❌ Accessibility standards not met
+- ❌ Cross-platform functionality inconsistencies exist
+
+## BDD & Acceptance Testing
+```gherkin
+# Travel booking feature specification
+Feature: Tour Booking Process
+  As a traveler
+  I want to book a tour
+  So that I can plan my vacation
+
+  Background:
+    Given I am a registered user
+    And I am logged into the TourTrip app
+
+  Scenario: Successful tour booking with payment
+    Given I search for tours in "Istanbul" for "2024-06-15"
+    When I select a "Bosphorus Cruise" tour
+    And I choose 2 participants
+    And I proceed to payment with "credit card"
+    And I complete the payment process
+    Then I should receive a booking confirmation
+    And I should get an email confirmation
+    And the tour should appear in my bookings
+
+  Scenario: Booking failure due to insufficient availability
+    Given I search for tours in "Cappadocia" for "2024-07-20"
+    When I select a "Hot Air Balloon" tour
+    And I choose 5 participants
+    But only 3 spots are available
+    Then I should see an availability error message
+    And I should be offered alternative dates
+    And no payment should be processed
+
+  Scenario: Offline booking data persistence
+    Given I start booking a tour while online
+    When I lose internet connection
+    And I continue filling the booking form
+    And I regain internet connection
+    Then my booking data should be preserved
+    And I should be able to complete the booking
+```
+
+## Test Environment Management
+- **Development**: Local testing; unit tests; rapid iteration; developer-focused feedback.
+- **Staging**: Production-like environment; integration testing; performance validation; user acceptance testing.
+- **Production**: Monitoring; smoke tests; canary deployments; rollback testing.
+- **Mobile Testing**: Device farms; OS versions; real device testing; app store validation.
+
+## Continuous Quality Improvement
+- **Test Analytics**: Identify slow tests; flaky test patterns; coverage gaps; performance trends.
+- **Quality Metrics**: Bug escape rate; customer-reported issues; performance regressions; security incidents.
+- **Process Improvement**: Retrospectives; automation opportunities; tool evaluation; training needs.
+- **Risk Assessment**: Quality risks; mitigation strategies; testing priorities; resource allocation.
+
+## Accessibility Testing Standards
+- **WCAG 2.1 AA Compliance**: Screen reader compatibility; keyboard navigation; color contrast; focus management.
+- **Mobile Accessibility**: VoiceOver (iOS); TalkBack (Android); gesture navigation; dynamic type support.
+- **Web Accessibility**: Semantic HTML; ARIA labels; skip navigation; responsive design; reduced motion.
+- **Testing Tools**: axe-core; Lighthouse accessibility; manual testing; assistive technology validation.
