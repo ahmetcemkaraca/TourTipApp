@@ -7,58 +7,50 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Import Stripe functions
+// ============================================================================
+// MVP FUNCTIONS ONLY
+// ============================================================================
+
+// Import and export Stripe functions
 import { createPaymentIntent, processRefund, stripeWebhook } from './stripe-functions';
-
-// Export functions
 export { createPaymentIntent, processRefund, stripeWebhook };
-
-// Export AI functions
-export * from './ai-functions';
-
-// Export loyalty functions
-export * from './loyalty-functions';
-
-// Export marketplace functions  
-export * from './marketplace-functions';
-
-// Export CMS functions
-export * from './cms-functions';
-
-// Export SEO functions
-export * from './seo-functions';
-
-// Export Security functions
-export * from './security-functions';
-
-// Export Analytics functions
-export * from './analytics-functions';
-
-// Export Social functions
-export * from './social-functions';
 
 // Export Email functions
 export * from './email-functions';
 
-// Export Support functions
-export * from './support-functions';
+// Export Notification functions
+export * from './notification-functions';
 
-// Export Privacy functions
-export * from './privacy-functions';
+// Export Security functions
+export * from './security-functions';
 
 // Export Rate Limiting functions
 export * from './rate-limiting-functions';
 
-// Export Extensions functions
-export * from './extensions-functions';
+// Export Privacy functions
+export * from './privacy-functions';
+
+// Export Support functions
+export * from './support-functions';
 
 // Export API functions
 export * from './api-functions';
 
 // Export Firestore Triggers
 export * from './firestore-triggers';
-export * from './bigquery-functions';
-export * from './admin-functions';
+
+// ============================================================================
+// REMOVED FOR MVP (Available in V2.0+)
+// ============================================================================
+// - AI functions
+// - Loyalty functions
+// - Marketplace functions
+// - CMS functions
+// - SEO functions
+// - Analytics functions (advanced)
+// - Social functions
+// - BigQuery functions
+// - Admin functions (advanced)
 
 // Example HTTP function
 export const helloWorld = onRequest((request: any, response: any) => {

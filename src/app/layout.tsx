@@ -1,14 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Layout } from '@/components/layout/layout';
 import { Toaster } from '@/components/ui/sonner';
 import { CartProvider } from '@/components/cart/cart-provider';
 import { AccessibilityProvider } from '@/components/accessibility/a11y-provider';
-import { PWAProvider, PWAManifestLink } from '@/components/pwa/pwa-provider';
 import { ErrorBoundary, AsyncErrorBoundary } from '@/components/error/error-boundary';
 
-const inter = Inter({ subsets: ['latin'] });
+// Note: PWA features removed for MVP 1.0, will be added in V2.0
 
 export const metadata: Metadata = {
   title: {
@@ -81,8 +79,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="tr" suppressHydrationWarning>
-      <PWAManifestLink />
-      <body className={inter.className}>
+      <body className="font-sans antialiased">
         <AsyncErrorBoundary>
           <ErrorBoundary
             onError={(error, errorInfo) => {
@@ -97,13 +94,11 @@ export default function RootLayout({
             }}
           >
             <AccessibilityProvider>
-              <PWAProvider>
-                <CartProvider>
-                  <Layout>
-                    {children}
-                  </Layout>
-                </CartProvider>
-              </PWAProvider>
+              <CartProvider>
+                <Layout>
+                  {children}
+                </Layout>
+              </CartProvider>
             </AccessibilityProvider>
           </ErrorBoundary>
         </AsyncErrorBoundary>
