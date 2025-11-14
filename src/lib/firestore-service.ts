@@ -302,35 +302,30 @@ export class FirestoreService<T extends { id: string }> {
 }
 
 // Export service instances for each collection
-import { 
-  UserSchema, 
-  ServiceProviderSchema, 
-  ServiceListingSchema, 
+import {
+  UserSchema,
+  ServiceProviderSchema,
+  TourSchema,
   BookingSchema,
   type User,
   type ServiceProvider,
-  type ServiceListing,
-  type Booking,
-  type AddOn,
-  type TripPlan,
-  type ChatConversation,
-  type InsurancePolicy
+  type Tour,
+  type Booking
 } from './firestore-collections';
 
+// MVP Services
 export const userService = new FirestoreService<User>('users', UserSchema);
-export const serviceProviderService = new FirestoreService<ServiceProvider>('serviceProviders', ServiceProviderSchema);
-export const serviceListingService = new FirestoreService<ServiceListing>('serviceListings', ServiceListingSchema);
+export const serviceProviderService = new FirestoreService<ServiceProvider>('providers', ServiceProviderSchema);
+export const tourService = new FirestoreService<Tour>('tours', TourSchema);
 export const bookingService = new FirestoreService<Booking>('bookings', BookingSchema);
-// Note: AddOn, TripPlan, ChatConversation, InsurancePolicy schemas not yet implemented
-// export const addOnService = new FirestoreService<AddOn>('addOns', AddOnSchema);
-// export const tripPlanService = new FirestoreService<TripPlan>('tripPlans', TripPlanSchema);
-// export const chatConversationService = new FirestoreService<ChatConversation>('chatConversations', ChatConversationSchema);
-// export const insurancePolicyService = new FirestoreService<InsurancePolicy>('insurancePolicies', InsurancePolicySchema);
+
+// Legacy alias for backward compatibility
+export const serviceListingService = tourService;
 
 // Custom service methods for specific business logic
-export class TourService extends FirestoreService<ServiceListing> {
+export class TourService extends FirestoreService<Tour> {
   constructor() {
-    super('tours', ServiceListingSchema);
+    super('tours', TourSchema);
   }
 
   // Search tours with full-text search (simplified version)

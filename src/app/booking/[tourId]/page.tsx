@@ -5,17 +5,18 @@ import { tourService } from '@/lib/firestore-service';
 import { RequireAuth } from '@/components/auth/require-auth';
 
 interface BookingPageProps {
-  params: { tourId: string };
-  searchParams: { 
-    date?: string; 
-    adults?: string; 
-    children?: string; 
-  };
+  params: Promise<{ tourId: string }>;
+  searchParams: Promise<{
+    date?: string;
+    adults?: string;
+    children?: string;
+  }>;
 }
 
 export async function generateMetadata({ params }: BookingPageProps): Promise<Metadata> {
   try {
-    const tour = await tourService.read(params.tourId);
+    const { tourId } = await params;
+    const tour = await tourService.read(tourId);
     
     if (!tour) {
       return {
@@ -39,17 +40,19 @@ export async function generateMetadata({ params }: BookingPageProps): Promise<Me
 
 export default async function BookingPage({ params, searchParams }: BookingPageProps) {
   try {
-    const tour = await tourService.read(params.tourId);
-    
+    const { tourId } = await params;
+    const searchParamsResolved = await searchParams;
+    const tour = await tourService.read(tourId);
+
     if (!tour) {
       notFound();
     }
 
     // Parse search params
     const bookingParams = {
-      date: searchParams.date || '',
-      adults: parseInt(searchParams.adults || '1'),
-      children: parseInt(searchParams.children || '0'),
+      date: searchParamsResolved.date || '',
+      adults: parseInt(searchParamsResolved.adults || '1'),
+      children: parseInt(searchParamsResolved.children || '0'),
     };
 
     return (
